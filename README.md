@@ -1,41 +1,30 @@
-Wyvern v3.1
------------
+# TDROP Marketplace based on Wyvern v3.1
 
-![Project Wyvern Logo](https://media.githubusercontent.com/media/ProjectWyvern/wyvern-branding/master/logo/logo-square-red-transparent-200x200.png?raw=true "Project Wyvern Logo")
+## Development
 
-[![https://img.shields.io/github/license/wyvernprotocol/wyvern-v3.svg](https://img.shields.io/github/license/wyvernprotocol/wyvern-v3.svg)](https://opensource.org/licenses/MIT) [![Build Status](https://travis-ci.org/wyvernprotocol/wyvern-v3.svg?branch=master)](https://travis-ci.org/wyvernprotocol/wyvern-v3) [![Coverage Status](https://coveralls.io/repos/github/wyvernprotocol/wyvern-v3/badge.svg?branch=master)](https://coveralls.io/github/wyvernprotocol/wyvern-v3?branch=master)
+### Setup
 
-This is version 3.1 of the Wyvern decentralized exchange protocol, designed to maximize the ease of positive-utility-sum multiparty transactions on a distributed ledger.
-
-Check out documentation [here](https://wyvernprotocol.com/docs).
-
-Deployed contract addresses can be found in [config.json](config.json).
-
-### Development
-
-#### Setup
-
-Install dependencies with [Yarn](https://yarnpkg.com/en/):
+First install dependencies with the following command:
 
 ```bash
 yarn
 ```
 
-#### Testing
+### Testing
 
-Run testrpc (ganache-cli) to provide a simulated EVM:
+First we need to setup the Theta local privatenet with the Theta/Ethereum RPC Adaptor [following this guide](https://docs.thetatoken.org/docs/setup-local-theta-ethereum-rpc-adaptor). The ETH RPC adaptor running at `http://localhost:18888/rpc` interacts with the ethers.js library by translating the Theta RPC interface into the ETH RPC interface.
 
-```bash
-yarn testrpc
-```
-
-In a separate terminal, run the testuite:
+Then, in a separate terminal, run the testuite:
 
 ```bash
-yarn test
+# run all tests
+truffle test --network=theta_privatenet
+
+# run an individual test
+truffle test ./test/3-wyvern-registry.js --network=theta_privatenet
 ```
 
-#### Linting
+### Linting
 
 Lint all Solidity files with:
 
@@ -43,7 +32,7 @@ Lint all Solidity files with:
 yarn lint
 ```
 
-#### Static Analysis
+### Static Analysis
 
 Run static analysis tooling with:
 
@@ -51,10 +40,10 @@ Run static analysis tooling with:
 yarn analyze
 ```
 
-#### Deployment
+### Deployment
 
-Edit [truffle.js](truffle.js) according to your deployment plans, then run:
+Run the following command to deploy the contracts
 
 ```bash
-yarn run truffle deploy --network [network]
+yarn run truffle deploy --network=[network]
 ```

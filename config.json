@@ -31,6 +31,28 @@
       "StaticMarket": "0xa86AF1A5bB8AF2418500AAbdacB9B7d2217F91A5",
       "WyvernRegistry": "0x23d0a64aF6987A2d536B9c3bA72FAAf66c9D73b6",
       "WyvernExchange": "0xDBA99cE125C6140dC4b30D48cBdDc57Bc67dc2d1"
+    },
+    "ganache": {
+      "Migrations": "0x5168dc4Ba8eFF83646Ed21099A7b866F06a4E586",
+      "WyvernAtomicizer": "0xa7ca98AB456038D569560f021d152337d5668384",
+      "WyvernStatic": "0x9DFd53f8915d67D39ad01F107F85A40a72e6Bc70",
+      "StaticMarket": "0x58416e65a84F77bb3AB6ca9106B7523d1A37bd46",
+      "WyvernRegistry": "0xc37DD077466813EC794F0FEd5DFDdcdC2Ad739e4",
+      "WyvernExchange": "0xC65BFDFcd279fc30a11322BDc6D10B52bd712178"
+    },
+    "test": {
+      "Migrations": "0x8CdaF0CD259887258Bc13a92C0a6dA92698644C0",
+      "WyvernAtomicizer": "0x345cA3e014Aaf5dcA488057592ee47305D9B3e10",
+      "WyvernStatic": "0xf25186B5081Ff5cE73482AD761DB0eB0d25abfBF",
+      "StaticMarket": "0x8f0483125FCb9aaAEFA9209D8E9d7b9C8B9Fb90F"
+    },
+    "theta_privatenet": {
+      "Migrations": "0x5010579756BFf6fbf0B12d0B3F66fADE37F0C76c",
+      "WyvernAtomicizer": "0xb78C72CfD51C7df17125FBCDb600e2dC29d95324",
+      "WyvernStatic": "0x493bA47dCf052015320Af3f186Bed1c481c8AFB2",
+      "StaticMarket": "0x041C090C4Bebee93a540D651e9bD20097F711EC4",
+      "WyvernRegistry": "0xb80B3da3Ad4A656228B3804dEEE06119f206C2a3",
+      "WyvernExchange": "0xFf85E59C4bcaF36011d4c7813afCA6C8e9F2bF8B"
     }
   }
 }

@@ -9,7 +9,7 @@ const TestERC721 = artifacts.require('TestERC721')
 const TestERC1155 = artifacts.require('TestERC1155')
 
 const Web3 = require('web3')
-const provider = new Web3.providers.HttpProvider('http://localhost:8545')
+const provider = new Web3.providers.HttpProvider('http://localhost:18888')
 const web3 = new Web3(provider)
 
 const {wrap,ZERO_BYTES32,CHAIN_ID,assertIsRejected} = require('./aux')

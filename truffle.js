@@ -1,111 +1,82 @@
-require('dotenv').config()
-
-var HDWalletProvider = require('truffle-hdwallet-provider')
-var KlaytnHDWalletProvider = require('truffle-hdwallet-provider-klaytn')
-var Caver = require('caver-js')
-
-var rinkebyMnemonic = process.env.RINKEBY_MNEMONIC || ''
-var mumbaiMnemonic = process.env.MUMBAI_MNEMONIC || ''
-var mainnetMnemonic = process.env.MAINNET_MNEMONIC || ''
-var klaytnPrivateKey = process.env.KLAYTN_PRIVATE_KEY || ''
-var baobabPrivateKey = process.env.BAOBAB_PRIVATE_KEY || ''
-var infuraKey = process.env.INFURA_KEY || '';
-
-var kasAccessKeyId = process.env.KAS_ACCESS_KEY_ID || ''
-var kasSecretAccessKey = process.env.KAS_SECRET_KEY || ''
-
-
+const HDWalletProvider = require('@truffle/hdwallet-provider');
+ 
 module.exports = {
   mocha: {
-    enableTimeouts: false
+    enableTimeouts: false,
+    before_timeout: 480000
   },
-  networks: {
-    mainnet: {
-      provider: function () {
-        return new HDWalletProvider(mainnetMnemonic, 'https://mainnet.infura.io')
-      },
-      from: '',
-      port: 8545,
-      network_id: '1',
-      gasPrice: 4310000000,
-      confirmations: 2
-    },
-    development: {
-      host: 'localhost',
-      port: 8545,
-      network_id: '50',
-      gas: 6700000
-    },
-    coverage: {
-      host: 'localhost',
-      port: 8545,
-      network_id: '*',
-      gas: 0xfffffffffff,
-      gasPrice: 0x01
-    },
-    rinkeby: {
-      provider: function () {
-        return new HDWalletProvider(rinkebyMnemonic, 'https://rinkeby.infura.io/v3/'+infuraKey)
-      },
-      from: '',
-      port: 8545,
-      network_id: '4',
-      gas: 6700000,
-      networkCheckTimeout: 100000,
-      gasPrice: 21110000000,
-      confirmations: 2
-    },
-    mumbai: {
-      provider: function () {
-        return new HDWalletProvider(mumbaiMnemonic, 'https://rpc-mumbai.matic.today')
-      },
-      from: '',
-      network_id: '80001'
-    },
-    baobab: {
-      provider: () => {
-        const options = {
-          headers: [
-            { name: 'Authorization', value: 'Basic ' + Buffer.from(kasAccessKeyId + ':' + kasSecretAccessKey).toString('base64') },
-            { name: 'x-chain-id', value: '1001' }
-          ],
-          keepAlive: false,
-        }
-        return new KlaytnHDWalletProvider(baobabPrivateKey, new Caver.providers.HttpProvider("https://node-api.klaytnapi.com/v1/klaytn", options))
-      },
-      from: '',
-      network_id: '1001',
-      networkCheckTimeout: 10000,
-      gas: '8500000',
-      gasPrice:'25000000000'
-    },
-    klaytn: {
-      provider: () => {
-        const options = {
-          headers: [
-            { name: 'Authorization', value: 'Basic ' + Buffer.from(kasAccessKeyId + ':' + kasSecretAccessKey).toString('base64') },
-            { name: 'x-chain-id', value: '8217' }
-          ],
-          keepAlive: false,
-        }
-        return new KlaytnHDWalletProvider(klaytnPrivateKey, new Caver.providers.HttpProvider("https://node-api.klaytnapi.com/v1/klaytn", options))
-      },
-      from: '',
-      network_id: '8217',
-      networkCheckTimeout: 10000,
-      gas: '8500000',
-      gasPrice:'25000000000'
-    }
-  },
+
   compilers: {
     solc: {
-      version: '0.7.5',
+      version: "0.7.5",
       settings: {
         optimizer: {
-          enabled: true,
-          runs: 750
+        enabled: true,
+        runs: 750
         }
       }
     }
+  },
+ 
+  networks: {
+    ganache: {
+      host: "localhost",
+      port: 8545,
+      network_id: "*",
+    },
+    
+    theta_privatenet: {
+      provider: () => {
+        var privateKeyTest01 = '1111111111111111111111111111111111111111111111111111111111111111'; 
+        var privateKeyTest02 = '2222222222222222222222222222222222222222222222222222222222222222';
+        var privateKeyTest03 = '3333333333333333333333333333333333333333333333333333333333333333';
+        var privateKeyTest04 = '4444444444444444444444444444444444444444444444444444444444444444';
+        var privateKeyTest05 = '5555555555555555555555555555555555555555555555555555555555555555';
+        var privateKeyTest06 = '6666666666666666666666666666666666666666666666666666666666666666';
+        var privateKeyTest07 = '7777777777777777777777777777777777777777777777777777777777777777';
+        var privateKeyTest08 = '8888888888888888888888888888888888888888888888888888888888888888';
+        var privateKeyTest09 = '9999999999999999999999999999999999999999999999999999999999999999';
+        var privateKeyTest10 = '1000000000000000000000000000000000000000000000000000000000000000';
+ 
+        return new HDWalletProvider({
+          privateKeys: [privateKeyTest01, privateKeyTest02, privateKeyTest03, privateKeyTest04, privateKeyTest05, privateKeyTest06, privateKeyTest07, privateKeyTest08, privateKeyTest09, privateKeyTest10],
+          providerOrUrl: 'http://localhost:18888/rpc',
+        });
+      },
+      network_id: 366,
+      gasPrice: 4000000000000,
+    },
+ 
+    theta_testnet: {
+      provider: () => {
+ 
+        // Replace the private key below with the private key of the deployer wallet. 
+        // Make sure the deployer wallet has a sufficient amount of TFuel, e.g. 100 TFuel
+        var deployerPrivateKey = '12345';
+ 
+        return new HDWalletProvider({
+          privateKeys: [deployerPrivateKey],
+          providerOrUrl: 'https://eth-rpc-api-testnet.thetatoken.org/rpc',
+        });
+      },
+      network_id: 365,
+      gasPrice: 4000000000000,
+    },
+
+    theta_mainnet: {
+      provider: () => {
+ 
+        // Replace the private key below with the private key of the deployer wallet. 
+        // Make sure the deployer wallet has a sufficient amount of TFuel, e.g. 100 TFuel
+        var deployerPrivateKey = '12345';
+ 
+        return new HDWalletProvider({
+          privateKeys: [deployerPrivateKey],
+          providerOrUrl: 'https://eth-rpc-api.thetatoken.org/rpc',
+        });
+      },
+      network_id: 361,
+      gasPrice: 4000000000000,
+    }
   }
-}
+};

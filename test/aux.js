@@ -1,5 +1,5 @@
 const Web3 = require('web3')
-const provider = new Web3.providers.HttpProvider('http://localhost:8545')
+const provider = new Web3.providers.HttpProvider('http://localhost:18888')
 var web3 = new Web3(provider)
 const { eip712Domain, structHash, signHash } = require('./eip712.js')
 

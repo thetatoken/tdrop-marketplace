@@ -9,7 +9,11 @@ const chainIds = {
   coverage: 50,
   rinkeby: 4,
   mumbai: 80001,
-  main: 1
+  main: 1,
+  theta_mainnet: 361,
+  theta_testnet: 365,
+  theta_privatenet: 366,
+  ganache: 100,
 }
 
 const personalSignPrefixes = {
