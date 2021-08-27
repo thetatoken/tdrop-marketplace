@@ -33,12 +33,12 @@
       "WyvernExchange": "0xDBA99cE125C6140dC4b30D48cBdDc57Bc67dc2d1"
     },
     "ganache": {
-      "Migrations": "0x5168dc4Ba8eFF83646Ed21099A7b866F06a4E586",
-      "WyvernAtomicizer": "0xa7ca98AB456038D569560f021d152337d5668384",
-      "WyvernStatic": "0x9DFd53f8915d67D39ad01F107F85A40a72e6Bc70",
-      "StaticMarket": "0x58416e65a84F77bb3AB6ca9106B7523d1A37bd46",
-      "WyvernRegistry": "0xc37DD077466813EC794F0FEd5DFDdcdC2Ad739e4",
-      "WyvernExchange": "0xC65BFDFcd279fc30a11322BDc6D10B52bd712178"
+      "Migrations": "0x0b613970DEe94B719d09423C4845f5e8Cfba888C",
+      "WyvernAtomicizer": "0x3b38F1c4FfBDBF2c1Dd139477EE4e49908d651C4",
+      "WyvernStatic": "0x76Ff1E90252497Be2104d0adbb05C71E69a79BFF",
+      "StaticMarket": "0xD3aA157D498b6EdfAdB4c3b33437e751187E0cCC",
+      "WyvernRegistry": "0x75FA098EdC8A6033779eA7010aBC906aBeaE3ac1",
+      "WyvernExchange": "0x75E197945499Ef42BA9A77Df365B30611C9f36B7"
     },
     "test": {
       "Migrations": "0x8CdaF0CD259887258Bc13a92C0a6dA92698644C0",

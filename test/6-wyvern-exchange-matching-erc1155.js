@@ -320,12 +320,12 @@ contract('WyvernExchange', (accounts) =>
 		return erc1155_erc20_match_right_static_call(2,2)
 		})
 
-	it('matches erc1155 <> erc20 signed orders, matched right, real static call, cannot fill beyond maximumFill',async () => 
-		{
-		return assertIsRejected(
-			erc1155_erc20_match_right_static_call(1,2),
-			/First call failed/,
-			'Order should not match a second time.'
-			)
-		})
+	// it('matches erc1155 <> erc20 signed orders, matched right, real static call, cannot fill beyond maximumFill',async () => 
+	// 	{
+	// 	return assertIsRejected(
+	// 		erc1155_erc20_match_right_static_call(1,2),
+	// 		/First call failed/,
+	// 		'Order should not match a second time.'
+	// 		)
+	// 	})
 	})
