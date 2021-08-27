@@ -77,7 +77,7 @@ const structToSign = (order, exchange) => {
     domain: {
       name: 'Wyvern Exchange',
       version: '3.1',
-      chainId: 50,
+      chainId: 366,
       verifyingContract: exchange
     },
     data: order

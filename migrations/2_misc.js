@@ -21,7 +21,7 @@ module.exports = async (deployer, network) => {
     setConfig('deployed.' + network + '.StaticMarket', StaticMarket.address)
   }
 
-  if (network !== 'coverage' && network !== 'development')
+  if (network !== 'coverage' && network !== 'development' && network !== 'theta_privatenet' & network !== 'ganache')
     return
 
   await deployer.deploy(TestERC20)
