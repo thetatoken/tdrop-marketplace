@@ -52,8 +52,10 @@ contract('WyvernExchange', (accounts) =>
 		const txCount = transactions || 1
 		
 		let {exchange, registry, statici} = await deploy_core_contracts()
-		let [erc20,erc1155] = await deploy([TestERC20,TestERC1155])
-		
+		// let [erc20,erc1155] = await deploy([TestERC20,TestERC1155])
+		let [erc20] = await deploy([TestERC20])
+		let [erc1155] = await deploy([TestERC1155])
+
 		await registry.registerProxy({from: account_a})
 		let proxy1 = await registry.proxies(account_a)
 		assert.equal(true, proxy1.length > 0, 'no proxy address for account a')
@@ -371,8 +373,10 @@ contract('WyvernExchange', (accounts) =>
 		const takerPriceOffset = buyPriceOffset || 0
 		
 		let {exchange, registry, statici} = await deploy_core_contracts()
-		let [erc20Seller,erc20Buyer] = await deploy([TestERC20,TestERC20])
-		
+		// let [erc20Seller,erc20Buyer] = await deploy([TestERC20,TestERC20])
+		let [erc20Seller] = await deploy([TestERC20])
+		let [erc20Buyer] = await deploy([TestERC20])
+
 		await registry.registerProxy({from: account_a})
 		let proxy1 = await registry.proxies(account_a)
 		assert.equal(true, proxy1.length > 0, 'no proxy address for account a')
@@ -603,8 +607,10 @@ contract('WyvernExchange', (accounts) =>
 			sender} = options
 
 		let {exchange, registry, statici} = await deploy_core_contracts()
-		let [erc721,erc20] = await deploy([TestERC721,TestERC20])
-		
+		// let [erc721,erc20] = await deploy([TestERC721,TestERC20])
+		let [erc721] = await deploy([TestERC721])
+		let [erc20] = await deploy([TestERC20])
+
 		await registry.registerProxy({from: account_a})
 		let proxy1 = await registry.proxies(account_a)
 		assert.equal(true, proxy1.length > 0, 'no proxy address for account a')
@@ -654,7 +660,7 @@ contract('WyvernExchange', (accounts) =>
 		// let [account_a_erc20_balance,token_owner] = await Promise.all([erc20.balanceOf(account_a),erc721.ownerOf(tokenId)])
 		let account_a_erc20_balance = await erc20.balanceOf(account_a)
 		let token_owner = await erc721.ownerOf(tokenId)
-		
+
 		assert.equal(account_a_erc20_balance.toNumber(), sellingPrice,'Incorrect ERC20 balance')
 		assert.equal(token_owner, account_b,'Incorrect token owner')
 		}

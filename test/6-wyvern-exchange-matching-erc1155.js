@@ -154,8 +154,10 @@ contract('WyvernExchange', (accounts) =>
 		let tokenId = 4
 		
 		let {atomicizer, exchange, registry, statici} = await deploy_core_contracts()
-		let [erc20,erc1155] = await deploy([TestERC20,TestERC1155])
-		
+		// let [erc20,erc1155] = await deploy([TestERC20,TestERC1155])
+		let [erc20] = await deploy([TestERC20])
+		let [erc1155] = await deploy([TestERC1155])
+
 		await registry.registerProxy({from: account_a})
 		let proxy1 = await registry.proxies(account_a)
 		assert.equal(true, proxy1.length > 0, 'no proxy address for account a')
@@ -256,8 +258,10 @@ contract('WyvernExchange', (accounts) =>
 			fillCount = 1
 		
 		let {atomicizer, exchange, registry, statici} = await deploy_core_contracts()
-		let [erc20,erc1155] = await deploy([TestERC20,TestERC1155])
-		
+		// let [erc20,erc1155] = await deploy([TestERC20,TestERC1155])
+		let [erc20] = await deploy([TestERC20])
+		let [erc1155] = await deploy([TestERC1155])
+
 		await registry.registerProxy({from: account_a})
 		let proxy1 = await registry.proxies(account_a)
 		assert.equal(true, proxy1.length > 0, 'no proxy address for account a')
