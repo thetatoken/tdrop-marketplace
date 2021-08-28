@@ -45,5 +45,5 @@ yarn analyze
 Run the following command to deploy the contracts
 
 ```bash
-yarn run truffle deploy --network=[network]
+truffle deploy --network=[network]
 ```
