@@ -216,144 +216,144 @@ contract('WyvernExchange', (accounts) =>
 			})
 		})
 
-	// it('StaticMarket: does not match erc1155 <> erc20 order beyond maximum fill',async () =>
-	// 	{
-	// 	const price = 10000
+	it('StaticMarket: does not match erc1155 <> erc20 order beyond maximum fill',async () =>
+		{
+		const price = 10000
 
-	// 	return assertIsRejected(
-	// 		any_erc1155_for_erc20_test({
-	// 			tokenId: 5,
-	// 			sellAmount: 1,
-	// 			sellingPrice: price,
-	// 			buyingPrice: price,
-	// 			buyAmount: 1,
-	// 			erc1155MintAmount: 2,
-	// 			erc20MintAmount: price*2,
-	// 			account_a: accounts[0],
-	// 			account_b: accounts[6],
-	// 			sender: accounts[1],
-	// 			transactions: 2
-	// 			}),
-	// 		/First order has invalid parameters/,
-	// 		'Order should not match the second time.'
-	// 		)
-	// 	})
+		return assertIsRejected(
+			any_erc1155_for_erc20_test({
+				tokenId: 5,
+				sellAmount: 1,
+				sellingPrice: price,
+				buyingPrice: price,
+				buyAmount: 1,
+				erc1155MintAmount: 2,
+				erc20MintAmount: price*2,
+				account_a: accounts[0],
+				account_b: accounts[6],
+				sender: accounts[1],
+				transactions: 2
+				}),
+			/First order has invalid parameters/,
+			'Order should not match the second time.'
+			)
+		})
 
-	// it('StaticMarket: does not fill erc1155 <> erc20 order with different prices',async () =>
-	// 	{
-	// 	const price = 10000
+	it('StaticMarket: does not fill erc1155 <> erc20 order with different prices',async () =>
+		{
+		const price = 10000
 
-	// 	return assertIsRejected(
-	// 		any_erc1155_for_erc20_test({
-	// 			tokenId: 5,
-	// 			sellAmount: 1,
-	// 			sellingPrice: price,
-	// 			buyingPrice: price-10,
-	// 			buyAmount: 1,
-	// 			erc1155MintAmount: 1,
-	// 			erc20MintAmount: price,
-	// 			account_a: accounts[0],
-	// 			account_b: accounts[6],
-	// 			sender: accounts[1]
-	// 			}),
-	// 		/Static call failed/,
-	// 		'Order should not match.'
-	// 		)
-	// 	})
+		return assertIsRejected(
+			any_erc1155_for_erc20_test({
+				tokenId: 5,
+				sellAmount: 1,
+				sellingPrice: price,
+				buyingPrice: price-10,
+				buyAmount: 1,
+				erc1155MintAmount: 1,
+				erc20MintAmount: price,
+				account_a: accounts[0],
+				account_b: accounts[6],
+				sender: accounts[1]
+				}),
+			/Static call failed/,
+			'Order should not match.'
+			)
+		})
 
-	// it('StaticMarket: does not fill erc1155 <> erc20 order with different ratios',async () =>
-	// 	{
-	// 	const price = 10000
+	it('StaticMarket: does not fill erc1155 <> erc20 order with different ratios',async () =>
+		{
+		const price = 10000
 
-	// 	return assertIsRejected(
-	// 		any_erc1155_for_erc20_test({
-	// 			tokenId: 5,
-	// 			sellAmount: 1,
-	// 			sellingPrice: price,
-	// 			buyingPrice: price,
-	// 			buyingDenominator: 2,
-	// 			buyAmount: 1,
-	// 			erc1155MintAmount: 1,
-	// 			erc20MintAmount: price,
-	// 			account_a: accounts[0],
-	// 			account_b: accounts[6],
-	// 			sender: accounts[1]
-	// 			}),
-	// 		/Static call failed/,
-	// 		'Order should not match.'
-	// 		)
-	// 	})
+		return assertIsRejected(
+			any_erc1155_for_erc20_test({
+				tokenId: 5,
+				sellAmount: 1,
+				sellingPrice: price,
+				buyingPrice: price,
+				buyingDenominator: 2,
+				buyAmount: 1,
+				erc1155MintAmount: 1,
+				erc20MintAmount: price,
+				account_a: accounts[0],
+				account_b: accounts[6],
+				sender: accounts[1]
+				}),
+			/Static call failed/,
+			'Order should not match.'
+			)
+		})
 
-	// it('StaticMarket: does not fill erc1155 <> erc20 order beyond maximum sell amount',async () =>
-	// 	{
-	// 	const nftAmount = 2
-	// 	const buyAmount = 3
-	// 	const price = 10000
+	it('StaticMarket: does not fill erc1155 <> erc20 order beyond maximum sell amount',async () =>
+		{
+		const nftAmount = 2
+		const buyAmount = 3
+		const price = 10000
 
-	// 	return assertIsRejected(
-	// 		any_erc1155_for_erc20_test({
-	// 			tokenId: 5,
-	// 			sellAmount: nftAmount,
-	// 			sellingPrice: price,
-	// 			buyingPrice: price,
-	// 			buyAmount,
-	// 			erc1155MintAmount: nftAmount,
-	// 			erc20MintAmount: buyAmount*price,
-	// 			account_a: accounts[0],
-	// 			account_b: accounts[6],
-	// 			sender: accounts[1]
-	// 			}),
-	// 		/First call failed/,
-	// 		'Order should not fill'
-	// 		)
-	// 	})
+		return assertIsRejected(
+			any_erc1155_for_erc20_test({
+				tokenId: 5,
+				sellAmount: nftAmount,
+				sellingPrice: price,
+				buyingPrice: price,
+				buyAmount,
+				erc1155MintAmount: nftAmount,
+				erc20MintAmount: buyAmount*price,
+				account_a: accounts[0],
+				account_b: accounts[6],
+				sender: accounts[1]
+				}),
+			/First call failed/,
+			'Order should not fill'
+			)
+		})
 
-	// it('StaticMarket: does not fill erc1155 <> erc20 order if balance is insufficient',async () =>
-	// 	{
-	// 	const nftAmount = 1
-	// 	const buyAmount = 1
-	// 	const price = 10000
+	it('StaticMarket: does not fill erc1155 <> erc20 order if balance is insufficient',async () =>
+		{
+		const nftAmount = 1
+		const buyAmount = 1
+		const price = 10000
 
-	// 	return assertIsRejected(
-	// 		any_erc1155_for_erc20_test({
-	// 			tokenId: 5,
-	// 			sellAmount: nftAmount,
-	// 			sellingPrice: price,
-	// 			buyingPrice: price,
-	// 			buyAmount,
-	// 			erc1155MintAmount: nftAmount,
-	// 			erc20MintAmount: buyAmount*price-1,
-	// 			account_a: accounts[0],
-	// 			account_b: accounts[6],
-	// 			sender: accounts[1]
-	// 			}),
-	// 		/Second call failed/,
-	// 		'Order should not fill'
-	// 		)
-	// 	})
+		return assertIsRejected(
+			any_erc1155_for_erc20_test({
+				tokenId: 5,
+				sellAmount: nftAmount,
+				sellingPrice: price,
+				buyingPrice: price,
+				buyAmount,
+				erc1155MintAmount: nftAmount,
+				erc20MintAmount: buyAmount*price-1,
+				account_a: accounts[0],
+				account_b: accounts[6],
+				sender: accounts[1]
+				}),
+			/Second call failed/,
+			'Order should not fill'
+			)
+		})
 
-	// it('StaticMarket: does not fill erc1155 <> erc20 order if the token IDs are different',async () =>
-	// 	{
-	// 	const price = 10000
+	it('StaticMarket: does not fill erc1155 <> erc20 order if the token IDs are different',async () =>
+		{
+		const price = 10000
 
-	// 	return assertIsRejected(
-	// 		any_erc1155_for_erc20_test({
-	// 			tokenId: 5,
-	// 			buyTokenId: 6,
-	// 			sellAmount: 1,
-	// 			sellingPrice: price,
-	// 			buyingPrice: price,
-	// 			buyAmount: 1,
-	// 			erc1155MintAmount: 1,
-	// 			erc20MintAmount: price,
-	// 			account_a: accounts[0],
-	// 			account_b: accounts[6],
-	// 			sender: accounts[1],
-	// 			}),
-	// 		/Static call failed/,
-	// 		'Order should not match the second time.'
-	// 		)
-	// 	})
+		return assertIsRejected(
+			any_erc1155_for_erc20_test({
+				tokenId: 5,
+				buyTokenId: 6,
+				sellAmount: 1,
+				sellingPrice: price,
+				buyingPrice: price,
+				buyAmount: 1,
+				erc1155MintAmount: 1,
+				erc20MintAmount: price,
+				account_a: accounts[0],
+				account_b: accounts[6],
+				sender: accounts[1],
+				}),
+			/Static call failed/,
+			'Order should not match the second time.'
+			)
+		})
 
 	const any_erc20_for_erc20_test = async (options) =>
 		{
@@ -504,95 +504,95 @@ contract('WyvernExchange', (accounts) =>
 			})
 		})
 
-	// it('StaticMarket: does not match erc20 <> erc20 order beyond maximum fill',async () =>
-	// 	{
-	// 	const price = 10000
+	it('StaticMarket: does not match erc20 <> erc20 order beyond maximum fill',async () =>
+		{
+		const price = 10000
 
-	// 	return assertIsRejected(
-	// 		any_erc20_for_erc20_test({
-	// 			sellAmount: 1,
-	// 			sellingPrice: price,
-	// 			buyingPrice: 1,
-	// 			buyAmount: 1,
-	// 			erc20MintAmountSeller: 2,
-	// 			erc20MintAmountBuyer: price*2,
-	// 			account_a: accounts[0],
-	// 			account_b: accounts[6],
-	// 			sender: accounts[1],
-	// 			transactions: 2
-	// 			}),
-	// 		/First order has invalid parameters/,
-	// 		'Order should not match the second time.'
-	// 		)
-	// 	})
+		return assertIsRejected(
+			any_erc20_for_erc20_test({
+				sellAmount: 1,
+				sellingPrice: price,
+				buyingPrice: 1,
+				buyAmount: 1,
+				erc20MintAmountSeller: 2,
+				erc20MintAmountBuyer: price*2,
+				account_a: accounts[0],
+				account_b: accounts[6],
+				sender: accounts[1],
+				transactions: 2
+				}),
+			/First order has invalid parameters/,
+			'Order should not match the second time.'
+			)
+		})
 
-	// it('StaticMarket: does not fill erc20 <> erc20 order with different taker price',async () =>
-	// 	{
-	// 	const price = 10000
+	it('StaticMarket: does not fill erc20 <> erc20 order with different taker price',async () =>
+		{
+		const price = 10000
 
-	// 	return assertIsRejected(
-	// 		any_erc20_for_erc20_test({
-	// 			sellAmount: 1,
-	// 			sellingPrice: price,
-	// 			buyingPrice: 1,
-	// 			buyPriceOffset: 1,
-	// 			buyAmount: 1,
-	// 			erc20MintAmountSeller: 2,
-	// 			erc20MintAmountBuyer: price,
-	// 			account_a: accounts[0],
-	// 			account_b: accounts[6],
-	// 			sender: accounts[1]
-	// 			}),
-	// 		/Static call failed/,
-	// 		'Order should not match.'
-	// 		)
-	// 	})
+		return assertIsRejected(
+			any_erc20_for_erc20_test({
+				sellAmount: 1,
+				sellingPrice: price,
+				buyingPrice: 1,
+				buyPriceOffset: 1,
+				buyAmount: 1,
+				erc20MintAmountSeller: 2,
+				erc20MintAmountBuyer: price,
+				account_a: accounts[0],
+				account_b: accounts[6],
+				sender: accounts[1]
+				}),
+			/Static call failed/,
+			'Order should not match.'
+			)
+		})
 
-	// it('StaticMarket: does not fill erc20 <> erc20 order beyond maximum sell amount',async () =>
-	// 	{
-	// 	const sellAmount = 2
-	// 	const buyAmount = 3
-	// 	const price = 10000
+	it('StaticMarket: does not fill erc20 <> erc20 order beyond maximum sell amount',async () =>
+		{
+		const sellAmount = 2
+		const buyAmount = 3
+		const price = 10000
 
-	// 	return assertIsRejected(
-	// 		any_erc20_for_erc20_test({
-	// 			sellAmount,
-	// 			sellingPrice: price,
-	// 			buyingPrice: 1,
-	// 			buyAmount,
-	// 			erc20MintAmountSeller: sellAmount,
-	// 			erc20MintAmountBuyer: buyAmount*price,
-	// 			account_a: accounts[0],
-	// 			account_b: accounts[6],
-	// 			sender: accounts[1]
-	// 			}),
-	// 		/First call failed/,
-	// 		'Order should not fill'
-	// 		)
-	// 	})
+		return assertIsRejected(
+			any_erc20_for_erc20_test({
+				sellAmount,
+				sellingPrice: price,
+				buyingPrice: 1,
+				buyAmount,
+				erc20MintAmountSeller: sellAmount,
+				erc20MintAmountBuyer: buyAmount*price,
+				account_a: accounts[0],
+				account_b: accounts[6],
+				sender: accounts[1]
+				}),
+			/First call failed/,
+			'Order should not fill'
+			)
+		})
 
-	// it('StaticMarket: does not fill erc20 <> erc20 order if balance is insufficient',async () =>
-	// 	{
-	// 	const sellAmount = 1
-	// 	const buyAmount = 1
-	// 	const price = 10000
+	it('StaticMarket: does not fill erc20 <> erc20 order if balance is insufficient',async () =>
+		{
+		const sellAmount = 1
+		const buyAmount = 1
+		const price = 10000
 
-	// 	return assertIsRejected(
-	// 		any_erc20_for_erc20_test({
-	// 			sellAmount,
-	// 			sellingPrice: price,
-	// 			buyingPrice: 1,
-	// 			buyAmount,
-	// 			erc20MintAmountSeller: sellAmount,
-	// 			erc20MintAmountBuyer: buyAmount*price-1,
-	// 			account_a: accounts[0],
-	// 			account_b: accounts[6],
-	// 			sender: accounts[1]
-	// 			}),
-	// 		/Second call failed/,
-	// 		'Order should not fill'
-	// 		)
-	// 	})
+		return assertIsRejected(
+			any_erc20_for_erc20_test({
+				sellAmount,
+				sellingPrice: price,
+				buyingPrice: 1,
+				buyAmount,
+				erc20MintAmountSeller: sellAmount,
+				erc20MintAmountBuyer: buyAmount*price-1,
+				account_a: accounts[0],
+				account_b: accounts[6],
+				sender: accounts[1]
+				}),
+			/Second call failed/,
+			'Order should not fill'
+			)
+		})
 
 	const erc721_for_erc20_test = async (options) =>
 		{
@@ -680,61 +680,61 @@ contract('WyvernExchange', (accounts) =>
 			})
 		})
 
-	// it('StaticMarket: does not fill erc721 <> erc20 order with different prices',async () =>
-	// 	{
-	// 	const price = 15000
+	it('StaticMarket: does not fill erc721 <> erc20 order with different prices',async () =>
+		{
+		const price = 15000
 
-	// 	return assertIsRejected(
-	// 		erc721_for_erc20_test({
-	// 			tokenId: 10,
-	// 			sellingPrice: price,
-	// 			buyingPrice: price-1,
-	// 			erc20MintAmount: price,
-	// 			account_a: accounts[0],
-	// 			account_b: accounts[6],
-	// 			sender: accounts[1]
-	// 			}),
-	// 		/Static call failed/,
-	// 		'Order should not have matched'
-	// 		)
-	// 	})
+		return assertIsRejected(
+			erc721_for_erc20_test({
+				tokenId: 10,
+				sellingPrice: price,
+				buyingPrice: price-1,
+				erc20MintAmount: price,
+				account_a: accounts[0],
+				account_b: accounts[6],
+				sender: accounts[1]
+				}),
+			/Static call failed/,
+			'Order should not have matched'
+			)
+		})
 
-	// it('StaticMarket: does not fill erc721 <> erc20 order if the balance is insufficient',async () =>
-	// 	{
-	// 	const price = 15000
+	it('StaticMarket: does not fill erc721 <> erc20 order if the balance is insufficient',async () =>
+		{
+		const price = 15000
 
-	// 	return assertIsRejected(
-	// 		erc721_for_erc20_test({
-	// 			tokenId: 10,
-	// 			sellingPrice: price,
-	// 			buyingPrice: price,
-	// 			erc20MintAmount: price-1,
-	// 			account_a: accounts[0],
-	// 			account_b: accounts[6],
-	// 			sender: accounts[1]
-	// 			}),
-	// 		/Second call failed/,
-	// 		'Order should not have matched'
-	// 		)
-	// 	})
+		return assertIsRejected(
+			erc721_for_erc20_test({
+				tokenId: 10,
+				sellingPrice: price,
+				buyingPrice: price,
+				erc20MintAmount: price-1,
+				account_a: accounts[0],
+				account_b: accounts[6],
+				sender: accounts[1]
+				}),
+			/Second call failed/,
+			'Order should not have matched'
+			)
+		})
 
-	// it('StaticMarket: does not fill erc721 <> erc20 order if the token IDs are different',async () =>
-	// 	{
-	// 	const price = 15000
+	it('StaticMarket: does not fill erc721 <> erc20 order if the token IDs are different',async () =>
+		{
+		const price = 15000
 
-	// 	return assertIsRejected(
-	// 		erc721_for_erc20_test({
-	// 			tokenId: 10,
-	// 			buyTokenId: 11,
-	// 			sellingPrice: price,
-	// 			buyingPrice: price,
-	// 			erc20MintAmount: price,
-	// 			account_a: accounts[0],
-	// 			account_b: accounts[6],
-	// 			sender: accounts[1]
-	// 			}),
-	// 		/Static call failed/,
-	// 		'Order should not have matched'
-	// 		)
-	// 	})
+		return assertIsRejected(
+			erc721_for_erc20_test({
+				tokenId: 10,
+				buyTokenId: 11,
+				sellingPrice: price,
+				buyingPrice: price,
+				erc20MintAmount: price,
+				account_a: accounts[0],
+				account_b: accounts[6],
+				sender: accounts[1]
+				}),
+			/Static call failed/,
+			'Order should not have matched'
+			)
+		})
 	})

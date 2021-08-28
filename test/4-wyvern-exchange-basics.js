@@ -29,15 +29,15 @@ contract('WyvernExchange',accounts => {
     assert.equal(hashToSign(example,exchange.inst.address),hash,'Incorrect order hash')
   })
 
-  // it('does not allow set-fill to same fill',async () => {
-  //   let {exchange,registry} = await withExchangeAndRegistry()
-  //   let example = {registry: registry.address, maker: accounts[1], staticTarget: exchange.inst.address, staticSelector: '0x00000000', staticExtradata: '0x', maximumFill: '1', listingTime: '0', expirationTime: '1000000000000', salt: '6'}
-  //   return assertIsRejected(
-  //     exchange.setOrderFill(example,'0',{from: accounts[1]}),
-  //     /Fill is already set to the desired value/,
-  //     'Should not have suceeded'
-  //     )
-  // })
+  it('does not allow set-fill to same fill',async () => {
+    let {exchange,registry} = await withExchangeAndRegistry()
+    let example = {registry: registry.address, maker: accounts[1], staticTarget: exchange.inst.address, staticSelector: '0x00000000', staticExtradata: '0x', maximumFill: '1', listingTime: '0', expirationTime: '1000000000000', salt: '6'}
+    return assertIsRejected(
+      exchange.setOrderFill(example,'0',{from: accounts[1]}),
+      /Fill is already set to the desired value/,
+      'Should not have suceeded'
+      )
+  })
 
   it('validates valid order parameters',async () => {
     let {exchange,registry} = await withExchangeAndRegistry()
@@ -91,25 +91,25 @@ contract('WyvernExchange',accounts => {
     assert.isFalse(await wrappedExchange.validateOrderAuthorization(hash,accounts[1],signature, {from: accounts[5]}),'Should not have validated')
   })
 
-  // it('does not allow approval twice',async () => {
-  //   let {exchange,registry} = await withExchangeAndRegistry()
-  //   let example = {registry: registry.address,maker: accounts[1],staticTarget: exchange.inst.address,staticSelector: '0x00000000',staticExtradata: '0x',maximumFill: '1',listingTime: '0',expirationTime: '1000000000000',salt: '1010'}
-  //   await exchange.approveOrder(example,false,{from: accounts[1]})
-  //   return assertIsRejected(
-  //     exchange.approveOrder(example,false,{from: accounts[1]}),
-  //     /Order has already been approved/,
-  //     'Should not have succeeded'
-  //     )
-  // })
+  it('does not allow approval twice',async () => {
+    let {exchange,registry} = await withExchangeAndRegistry()
+    let example = {registry: registry.address,maker: accounts[1],staticTarget: exchange.inst.address,staticSelector: '0x00000000',staticExtradata: '0x',maximumFill: '1',listingTime: '0',expirationTime: '1000000000000',salt: '1010'}
+    await exchange.approveOrder(example,false,{from: accounts[1]})
+    return assertIsRejected(
+      exchange.approveOrder(example,false,{from: accounts[1]}),
+      /Order has already been approved/,
+      'Should not have succeeded'
+      )
+  })
 
-  // it('does not allow approval from another user',async () => {
-  //   let {exchange,registry} = await withExchangeAndRegistry()
-  //   const example = {registry: registry.address, maker: accounts[1], staticTarget: exchange.inst.address, staticSelector: '0x00000000', staticExtradata: '0x', maximumFill: '1', listingTime: '0', expirationTime: '1000000000000', salt: '10101234'}
-  //   return assertIsRejected(
-  //     exchange.approveOrder(example,false,{from: accounts[2]}),
-  //     /Sender is not the maker of the order and thus not authorized to approve it/,
-  //     'Should not have succeeded')
-  // })
+  it('does not allow approval from another user',async () => {
+    let {exchange,registry} = await withExchangeAndRegistry()
+    const example = {registry: registry.address, maker: accounts[1], staticTarget: exchange.inst.address, staticSelector: '0x00000000', staticExtradata: '0x', maximumFill: '1', listingTime: '0', expirationTime: '1000000000000', salt: '10101234'}
+    return assertIsRejected(
+      exchange.approveOrder(example,false,{from: accounts[2]}),
+      /Sender is not the maker of the order and thus not authorized to approve it/,
+      'Should not have succeeded')
+  })
 
   it('validates valid authorization by approval',async () => {
     let {exchange,registry} = await withExchangeAndRegistry()
