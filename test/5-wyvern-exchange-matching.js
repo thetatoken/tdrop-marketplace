@@ -244,8 +244,8 @@ contract('WyvernExchange', (accounts) => {
     const one = {registry: registry.address, maker: accounts[0], staticTarget: statici.address, staticSelector: selector, staticExtradata: paramsOne, maximumFill: '1', listingTime: '0', expirationTime: '10000000000', salt: '333123'}
     const two = {registry: registry.address, maker: accounts[6], staticTarget: statici.address, staticSelector: selector, staticExtradata: paramsTwo, maximumFill: '1', listingTime: '0', expirationTime: '10000000000', salt: '123344'}
 
-    const firstData = erc721c.methods.transferFrom(accounts[0], accounts[6], nfts[0]).encodeABI()
-    const secondData = erc721c.methods.transferFrom(accounts[6], accounts[0], nfts[1]).encodeABI()
+    const firstData = await erc721c.methods.transferFrom(accounts[0], accounts[6], nfts[0]).encodeABI()
+    const secondData = await erc721c.methods.transferFrom(accounts[6], accounts[0], nfts[1]).encodeABI()
 
     const firstCall = {target: erc721.address, howToCall: 0, data: firstData}
     const secondCall = {target: erc721.address, howToCall: 0, data: secondData}
