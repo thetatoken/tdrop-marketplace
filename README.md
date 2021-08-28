@@ -18,10 +18,10 @@ Then, in a separate terminal, run the testuite:
 
 ```bash
 # run all tests
-truffle test --network=theta_privatenet
+MODE=trace truffle test --network=theta_privatenet
 
 # run an individual test
-truffle test ./test/3-wyvern-registry.js --network=theta_privatenet
+MODE=trace truffle test ./test/3-wyvern-registry.js --network=theta_privatenet
 ```
 
 ### Linting
@@ -45,5 +45,5 @@ yarn analyze
 Run the following command to deploy the contracts
 
 ```bash
-yarn run truffle deploy --network=[network]
+truffle deploy --network=[network]
 ```

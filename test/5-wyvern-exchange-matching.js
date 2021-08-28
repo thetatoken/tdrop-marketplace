@@ -28,14 +28,18 @@ contract('WyvernExchange', (accounts) => {
   const withAsymmetricalTokens = async () => {
     let {erc721} = await withContracts()
     let nfts = [4,5]
-    await Promise.all([erc721.mint(accounts[0], nfts[0]),erc721.mint(accounts[6], nfts[1])])
+    // await Promise.all([erc721.mint(accounts[0], nfts[0]),erc721.mint(accounts[6], nfts[1])])
+    await erc721.mint(accounts[0], nfts[0])
+    await erc721.mint(accounts[6], nfts[1])
     return {nfts,erc721}
   }
 
   const withAsymmetricalTokens2 = async () => {
     let {erc721} = await withContracts()
     let nfts = [6,7]
-    await Promise.all([erc721.mint(accounts[0], nfts[0]),erc721.mint(accounts[6], nfts[1])])
+    // await Promise.all([erc721.mint(accounts[0], nfts[0]),erc721.mint(accounts[6], nfts[1])])
+    await erc721.mint(accounts[0], nfts[0])
+    await erc721.mint(accounts[6], nfts[1])
     return {nfts,erc721}
   }
 
@@ -49,7 +53,9 @@ contract('WyvernExchange', (accounts) => {
   const withTokens = async () => {
     let {erc20} = await withContracts()
     const amount = randomUint() + 2
-    await Promise.all([erc20.mint(accounts[0], amount),erc20.mint(accounts[6], amount)])
+    // await Promise.all([erc20.mint(accounts[0], amount),erc20.mint(accounts[6], amount)])
+    await erc20.mint(accounts[0], amount)
+    await erc20.mint(accounts[6], amount)
     return {erc20}
   }
 
@@ -238,8 +244,8 @@ contract('WyvernExchange', (accounts) => {
     const one = {registry: registry.address, maker: accounts[0], staticTarget: statici.address, staticSelector: selector, staticExtradata: paramsOne, maximumFill: '1', listingTime: '0', expirationTime: '10000000000', salt: '333123'}
     const two = {registry: registry.address, maker: accounts[6], staticTarget: statici.address, staticSelector: selector, staticExtradata: paramsTwo, maximumFill: '1', listingTime: '0', expirationTime: '10000000000', salt: '123344'}
 
-    const firstData = erc721c.methods.transferFrom(accounts[0], accounts[6], nfts[0]).encodeABI()
-    const secondData = erc721c.methods.transferFrom(accounts[6], accounts[0], nfts[1]).encodeABI()
+    const firstData = await erc721c.methods.transferFrom(accounts[0], accounts[6], nfts[0]).encodeABI()
+    const secondData = await erc721c.methods.transferFrom(accounts[6], accounts[0], nfts[1]).encodeABI()
 
     const firstCall = {target: erc721.address, howToCall: 0, data: firstData}
     const secondCall = {target: erc721.address, howToCall: 0, data: secondData}
@@ -387,7 +393,9 @@ contract('WyvernExchange', (accounts) => {
     const one = {registry: registry.address, maker: accounts[6], staticTarget: statici.address, staticSelector: selector, staticExtradata: '0x', maximumFill: '1', listingTime: '0', expirationTime: '100000000000', salt: 2344}
     const two = {registry: registry.address, maker: accounts[6], staticTarget: statici.address, staticSelector: selector, staticExtradata: '0x', maximumFill: '1', listingTime: '0', expirationTime: '100000000000', salt: 2345}
     
-    let [oneSig,twoSig] = await Promise.all([exchange.sign(one, accounts[6]),exchange.sign(two, accounts[6])])
+    //let [oneSig,twoSig] = await Promise.all([exchange.sign(one, accounts[6]),exchange.sign(two, accounts[6])])
+    let oneSig = await exchange.sign(one, accounts[6])
+    let twoSig = await exchange.sign(two, accounts[6])
     const call = {target: statici.address, howToCall: 0, data: web3.eth.abi.encodeFunctionSignature('test()')}
     assert.isOk(await exchange.atomicMatch(one, oneSig, call, two, twoSig, call, ZERO_BYTES32))
   })
@@ -413,7 +421,9 @@ contract('WyvernExchange', (accounts) => {
     const one = {registry: registry.address, maker: accounts[6], staticTarget: statici.address, staticSelector: selector, staticExtradata: '0x', maximumFill: '1', listingTime: '0', expirationTime: '100000000000', salt: randomUint()}
     const two = {registry: registry.address, maker: accounts[6], staticTarget: statici.address, staticSelector: selector, staticExtradata: '0x', maximumFill: '1', listingTime: '0', expirationTime: '100000000000', salt: randomUint()}
     
-    let [oneSig,twoSig] = await Promise.all([exchange.sign(one, accounts[6]),exchange.sign(two, accounts[6])])
+    //let [oneSig,twoSig] = await Promise.all([exchange.sign(one, accounts[6]),exchange.sign(two, accounts[6])])
+    let oneSig = await exchange.sign(one, accounts[6])
+    let twoSig = await exchange.sign(two, accounts[6])
     const call = {target: statici.address, howToCall: 0, data: web3.eth.abi.encodeFunctionSignature('test()')}
     assert.isOk(await exchange.atomicMatch(one, oneSig, call, two, twoSig, call, ZERO_BYTES32))
   })
@@ -424,7 +434,9 @@ contract('WyvernExchange', (accounts) => {
     const one = {registry: registry.address, maker: accounts[6], staticTarget: statici.address, staticSelector: selector, staticExtradata: '0x', maximumFill: '1', listingTime: '0', expirationTime: '100000000000', salt: randomUint()}
     const two = {registry: registry.address, maker: accounts[6], staticTarget: statici.address, staticSelector: selector, staticExtradata: '0x', maximumFill: '1', listingTime: '0', expirationTime: '100000000000', salt: randomUint()}
     
-    let [oneSig,twoSig] = await Promise.all([exchange.sign(one, accounts[6]),exchange.sign(two, accounts[6])])
+    // let [oneSig,twoSig] = await Promise.all([exchange.sign(one, accounts[6]),exchange.sign(two, accounts[6])])
+    let oneSig = await exchange.sign(one, accounts[6])
+    let twoSig = await exchange.sign(two, accounts[6])
     const call = {target: statici.address, howToCall: 0, data: web3.eth.abi.encodeFunctionSignature('test()')}
     assert.isOk(exchange.atomicMatchWith(one, oneSig, call, two, twoSig, call, ZERO_BYTES32, {value: 3}))
   })
@@ -435,7 +447,9 @@ contract('WyvernExchange', (accounts) => {
     const one = {registry: registry.address, maker: accounts[6], staticTarget: statici.address, staticSelector: selector, staticExtradata: '0x', maximumFill: '1', listingTime: '0', expirationTime: '100000000000', salt: randomUint()}
     const two = {registry: registry.address, maker: accounts[6], staticTarget: statici.address, staticSelector: selector, staticExtradata: '0x', maximumFill: '1', listingTime: '0', expirationTime: '100000000000', salt: randomUint()}
     
-    await Promise.all([exchange.approveOrder(one, false, {from: accounts[6]}),exchange.approveOrder(two, false, {from: accounts[6]})])
+    // await Promise.all([exchange.approveOrder(one, false, {from: accounts[6]}),exchange.approveOrder(two, false, {from: accounts[6]})])
+    await exchange.approveOrder(one, false, {from: accounts[6]})
+    await exchange.approveOrder(two, false, {from: accounts[6]})
     const call = {target: statici.address, howToCall: 0, data: web3.eth.abi.encodeFunctionSignature('test()')}
     assert.isOk(exchange.atomicMatch(one, NULL_SIG, call, two, NULL_SIG, call, ZERO_BYTES32))
   })
@@ -553,7 +567,9 @@ contract('WyvernExchange', (accounts) => {
     const one = {registry: registry.address, maker: accounts[6], staticTarget: statici.address, staticSelector: selector, staticExtradata: '0x', maximumFill: '1', listingTime: '0', expirationTime: '100000000000', salt: randomUint()}
     const two = {registry: registry.address, maker: accounts[6], staticTarget: statici.address, staticSelector: selector, staticExtradata: '0x', maximumFill: '1', listingTime: '0', expirationTime: '100000000000', salt: randomUint()}
     
-    let [oneSig,twoSig] = await Promise.all([exchange.sign(one, accounts[6]),exchange.sign(two, accounts[6])])
+    //let [oneSig,twoSig] = await Promise.all([exchange.sign(one, accounts[6]),exchange.sign(two, accounts[6])])
+    let oneSig = await exchange.sign(one, accounts[6])
+    let twoSig = await exchange.sign(two, accounts[6])
     const call = {target: statici.address, howToCall: 0, data: web3.eth.abi.encodeFunctionSignature('test()')}
     assert.isOk(await exchange.atomicMatchWith(one, oneSig, call, two, twoSig, call, ZERO_BYTES32, {value: 200}))
   })

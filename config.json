@@ -33,12 +33,17 @@
       "WyvernExchange": "0xDBA99cE125C6140dC4b30D48cBdDc57Bc67dc2d1"
     },
     "ganache": {
-      "Migrations": "0x5168dc4Ba8eFF83646Ed21099A7b866F06a4E586",
-      "WyvernAtomicizer": "0xa7ca98AB456038D569560f021d152337d5668384",
-      "WyvernStatic": "0x9DFd53f8915d67D39ad01F107F85A40a72e6Bc70",
-      "StaticMarket": "0x58416e65a84F77bb3AB6ca9106B7523d1A37bd46",
-      "WyvernRegistry": "0xc37DD077466813EC794F0FEd5DFDdcdC2Ad739e4",
-      "WyvernExchange": "0xC65BFDFcd279fc30a11322BDc6D10B52bd712178"
+      "Migrations": "0xb4546E701f2Ed61b99DC7FDe1383C34EfC5e0242",
+      "WyvernAtomicizer": "0x3594fe33294463db74B9317405C2eBaf94b63eF7",
+      "WyvernStatic": "0xc4a74BeD9fb4822008CBB836a5C90e8c9c0Ff94a",
+      "StaticMarket": "0x7cbD0523714295b11a81DeA6893bcDd1C015EBeC",
+      "WyvernRegistry": "0x97BE16D407BD5f31E74e2c857B873fEFca11e6B3",
+      "WyvernExchange": "0x71f5ca3e4a62e15767155c4ee5b9D67f7F59499f",
+      "TestERC20": "0x8023eC292666d64F771D9e9Ce89AC08F506436BE",
+      "TestERC721": "0xFb04C55bf8F830FD13d11f60d40fef12a0e16630",
+      "TestAuthenticatedProxy": "0xD809f64bbc4e68ce1FAAC66fb06A5589c72cc47b",
+      "TestERC1271": "0xa53231825eCD3eB2DBfa5738f95269383878Efcb",
+      "TestERC1155": "0x5834B3cF07658F7858b24f0E47cd5402C447B6b3"
     },
     "test": {
       "Migrations": "0x8CdaF0CD259887258Bc13a92C0a6dA92698644C0",
@@ -47,12 +52,17 @@
       "StaticMarket": "0x8f0483125FCb9aaAEFA9209D8E9d7b9C8B9Fb90F"
     },
     "theta_privatenet": {
-      "Migrations": "0x5010579756BFf6fbf0B12d0B3F66fADE37F0C76c",
-      "WyvernAtomicizer": "0xb78C72CfD51C7df17125FBCDb600e2dC29d95324",
-      "WyvernStatic": "0x493bA47dCf052015320Af3f186Bed1c481c8AFB2",
-      "StaticMarket": "0x041C090C4Bebee93a540D651e9bD20097F711EC4",
-      "WyvernRegistry": "0xb80B3da3Ad4A656228B3804dEEE06119f206C2a3",
-      "WyvernExchange": "0xFf85E59C4bcaF36011d4c7813afCA6C8e9F2bF8B"
+      "Migrations": "0xBE5486826e3F6904cB474d180E70CE719843D105",
+      "WyvernAtomicizer": "0x5b057580A6b1d3FDca38De21D2ab5CF1371e2E3d",
+      "WyvernStatic": "0x4023A7698fFc702AdC04DA7a3dF9A9e1D4A1d0db",
+      "StaticMarket": "0x59f8a6bBecC8a526827fD87a6800d7b43Cd25C50",
+      "WyvernRegistry": "0xBc5f81E91E478C0e62C9Ddd60B3f5762f1C3ba1d",
+      "WyvernExchange": "0xd7aDb6e407e374a5997cE27E4035aec45EB3E1CD",
+      "TestERC20": "0x0Ad9B7B0fa06cdc656259F2A24B5a7c422021316",
+      "TestERC721": "0x6375e00a80e7c504C5bA847F40c27e6972d77CFC",
+      "TestAuthenticatedProxy": "0x302264F5965d5F4e1F669BCdBE4f31A3E6A8d513",
+      "TestERC1271": "0xa8f03e4A9970c8eAD19844a64Ab7637aCa13EE6B",
+      "TestERC1155": "0xe9f794246d5c82987Ac118Caaa21d6515FF79047"
     }
   }
 }

@@ -59,7 +59,7 @@ contract('WyvernExchange',accounts => {
 
   it('does not validate order parameters with expirationTime before now',async () => {
     let {exchange,registry} = await withExchangeAndRegistry()
-    let example = {registry: registry.address,maker: accounts[0],staticTarget: exchange.inst.address,staticSelector: '0x00000000',staticExtradata: '0x',maximumFill: '1',listingTime: '0',expirationTime: '0',salt: '0'}
+    let example = {registry: registry.address,maker: accounts[0],staticTarget: exchange.inst.address,staticSelector: '0x00000000',staticExtradata: '0x',maximumFill: '1',listingTime: '0',expirationTime: '1',salt: '0'}
     assert.isFalse(await exchange.validateOrderParameters(example),'Should not have validated')
   })
 
@@ -116,7 +116,7 @@ contract('WyvernExchange',accounts => {
     const example = {registry: registry.address, maker: accounts[1], staticTarget: exchange.inst.address, staticSelector: '0x00000000', staticExtradata: '0x', maximumFill: '1', listingTime: '0', expirationTime: '1000000000000', salt: '10'}
     await exchange.approveOrder(example,false,{from: accounts[1]})
     const hash = hashOrder(example)
-    let valid = await exchange.validateOrderAuthorization(hash, accounts[0], {v: 27, r: ZERO_BYTES32, s: ZERO_BYTES32})
+    let valid = await exchange.validateOrderAuthorization(hash, accounts[0], {v: 27, r: ZERO_BYTES32, s: ZERO_BYTES32}, {from: accounts[0]})
     assert.isTrue(valid,'Should have validated')
   })
 

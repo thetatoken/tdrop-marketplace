@@ -18,8 +18,14 @@ contract('WyvernExchange', (accounts) =>
 	{
 	let deploy_core_contracts = async () =>
 		{
-		let [registry,atomicizer] = await Promise.all([WyvernRegistry.new(), WyvernAtomicizer.new()])
-		let [exchange,statici] = await Promise.all([WyvernExchange.new(CHAIN_ID,[registry.address],'0x'),StaticMarket.new()])
+		// let [registry,atomicizer] = await Promise.all([WyvernRegistry.new(), WyvernAtomicizer.new()])
+		registry = await WyvernRegistry.new()
+		atomicizer = await WyvernAtomicizer.new()
+		
+		// let [exchange,statici] = await Promise.all([WyvernExchange.new(CHAIN_ID,[registry.address],'0x'),StaticMarket.new()])
+		exchange = await WyvernExchange.new(CHAIN_ID,[registry.address],'0x')
+		statici = await StaticMarket.new()
+
 		await registry.grantInitialAuthentication(exchange.address)
 		return {registry,exchange:wrap(exchange),atomicizer,statici}
 		}
@@ -46,8 +52,10 @@ contract('WyvernExchange', (accounts) =>
 		const txCount = transactions || 1
 		
 		let {exchange, registry, statici} = await deploy_core_contracts()
-		let [erc20,erc1155] = await deploy([TestERC20,TestERC1155])
-		
+		// let [erc20,erc1155] = await deploy([TestERC20,TestERC1155])
+		let [erc20] = await deploy([TestERC20])
+		let [erc1155] = await deploy([TestERC1155])
+
 		await registry.registerProxy({from: account_a})
 		let proxy1 = await registry.proxies(account_a)
 		assert.equal(true, proxy1.length > 0, 'no proxy address for account a')
@@ -56,8 +64,13 @@ contract('WyvernExchange', (accounts) =>
 		let proxy2 = await registry.proxies(account_b)
 		assert.equal(true, proxy2.length > 0, 'no proxy address for account b')
 		
-		await Promise.all([erc1155.setApprovalForAll(proxy1,true,{from: account_a}),erc20.approve(proxy2,erc20MintAmount,{from: account_b})])
-		await Promise.all([erc1155.mint(account_a,tokenId,erc1155MintAmount),erc20.mint(account_b,erc20MintAmount)])
+		// await Promise.all([erc1155.setApprovalForAll(proxy1,true,{from: account_a}),erc20.approve(proxy2,erc20MintAmount,{from: account_b})])
+		await erc1155.setApprovalForAll(proxy1,true,{from: account_a})
+		await erc20.approve(proxy2,erc20MintAmount,{from: account_b})
+
+		// await Promise.all([erc1155.mint(account_a,tokenId,erc1155MintAmount),erc20.mint(account_b,erc20MintAmount)])
+		await erc1155.mint(account_a,tokenId,erc1155MintAmount)
+		await erc20.mint(account_b,erc20MintAmount)
 
 		if (buyTokenId)
 			await erc1155.mint(account_a,buyTokenId,erc1155MintAmount)
@@ -95,7 +108,10 @@ contract('WyvernExchange', (accounts) =>
 			two.salt++
 			}
 		
-		let [account_a_erc20_balance,account_b_erc1155_balance] = await Promise.all([erc20.balanceOf(account_a),erc1155.balanceOf(account_b, tokenId)])
+		// let [account_a_erc20_balance,account_b_erc1155_balance] = await Promise.all([erc20.balanceOf(account_a),erc1155.balanceOf(account_b, tokenId)])
+		let account_a_erc20_balance = await erc20.balanceOf(account_a)
+		let account_b_erc1155_balance = await erc1155.balanceOf(account_b, tokenId)
+		
 		assert.equal(account_a_erc20_balance.toNumber(), sellingPrice*buyAmount*txCount,'Incorrect ERC20 balance')
 		assert.equal(account_b_erc1155_balance.toNumber(), sellingNumerator || (buyAmount*txCount),'Incorrect ERC1155 balance')
 		}
@@ -357,8 +373,10 @@ contract('WyvernExchange', (accounts) =>
 		const takerPriceOffset = buyPriceOffset || 0
 		
 		let {exchange, registry, statici} = await deploy_core_contracts()
-		let [erc20Seller,erc20Buyer] = await deploy([TestERC20,TestERC20])
-		
+		// let [erc20Seller,erc20Buyer] = await deploy([TestERC20,TestERC20])
+		let [erc20Seller] = await deploy([TestERC20])
+		let [erc20Buyer] = await deploy([TestERC20])
+
 		await registry.registerProxy({from: account_a})
 		let proxy1 = await registry.proxies(account_a)
 		assert.equal(true, proxy1.length > 0, 'no proxy address for account a')
@@ -367,8 +385,13 @@ contract('WyvernExchange', (accounts) =>
 		let proxy2 = await registry.proxies(account_b)
 		assert.equal(true, proxy2.length > 0, 'no proxy address for account b')
 		
-		await Promise.all([erc20Seller.approve(proxy1,erc20MintAmountSeller,{from: account_a}),erc20Buyer.approve(proxy2,erc20MintAmountBuyer,{from: account_b})])
-		await Promise.all([erc20Seller.mint(account_a,erc20MintAmountSeller),erc20Buyer.mint(account_b,erc20MintAmountBuyer)])
+		// await Promise.all([erc20Seller.approve(proxy1,erc20MintAmountSeller,{from: account_a}),erc20Buyer.approve(proxy2,erc20MintAmountBuyer,{from: account_b})])
+		await erc20Seller.approve(proxy1,erc20MintAmountSeller,{from: account_a})
+		await erc20Buyer.approve(proxy2,erc20MintAmountBuyer,{from: account_b})
+
+		// await Promise.all([erc20Seller.mint(account_a,erc20MintAmountSeller),erc20Buyer.mint(account_b,erc20MintAmountBuyer)])
+		await erc20Seller.mint(account_a,erc20MintAmountSeller)
+		await erc20Buyer.mint(account_b,erc20MintAmountBuyer)
 
 		const erc20cSeller = new web3.eth.Contract(erc20Seller.abi, erc20Seller.address)
 		const erc20cBuyer = new web3.eth.Contract(erc20Buyer.abi, erc20Buyer.address)
@@ -584,8 +607,10 @@ contract('WyvernExchange', (accounts) =>
 			sender} = options
 
 		let {exchange, registry, statici} = await deploy_core_contracts()
-		let [erc721,erc20] = await deploy([TestERC721,TestERC20])
-		
+		// let [erc721,erc20] = await deploy([TestERC721,TestERC20])
+		let [erc721] = await deploy([TestERC721])
+		let [erc20] = await deploy([TestERC20])
+
 		await registry.registerProxy({from: account_a})
 		let proxy1 = await registry.proxies(account_a)
 		assert.equal(true, proxy1.length > 0, 'no proxy address for account a')
@@ -594,8 +619,13 @@ contract('WyvernExchange', (accounts) =>
 		let proxy2 = await registry.proxies(account_b)
 		assert.equal(true, proxy2.length > 0, 'no proxy address for account b')
 		
-		await Promise.all([erc721.setApprovalForAll(proxy1,true,{from: account_a}),erc20.approve(proxy2,erc20MintAmount,{from: account_b})])
-		await Promise.all([erc721.mint(account_a,tokenId),erc20.mint(account_b,erc20MintAmount)])
+		// await Promise.all([erc721.setApprovalForAll(proxy1,true,{from: account_a}),erc20.approve(proxy2,erc20MintAmount,{from: account_b})])
+		await erc721.setApprovalForAll(proxy1,true,{from: account_a})
+		await erc20.approve(proxy2,erc20MintAmount,{from: account_b})
+		
+		// await Promise.all([erc721.mint(account_a,tokenId),erc20.mint(account_b,erc20MintAmount)])
+		await erc721.mint(account_a,tokenId)
+		await erc20.mint(account_b,erc20MintAmount)
 
 		if (buyTokenId)
 			await erc721.mint(account_a,buyTokenId)
@@ -627,7 +657,10 @@ contract('WyvernExchange', (accounts) =>
 		let sigTwo = await exchange.sign(two, account_b)
 		await exchange.atomicMatchWith(one, sigOne, firstCall, two, sigTwo, secondCall, ZERO_BYTES32,{from: sender || account_a})
 		
-		let [account_a_erc20_balance,token_owner] = await Promise.all([erc20.balanceOf(account_a),erc721.ownerOf(tokenId)])
+		// let [account_a_erc20_balance,token_owner] = await Promise.all([erc20.balanceOf(account_a),erc721.ownerOf(tokenId)])
+		let account_a_erc20_balance = await erc20.balanceOf(account_a)
+		let token_owner = await erc721.ownerOf(tokenId)
+
 		assert.equal(account_a_erc20_balance.toNumber(), sellingPrice,'Incorrect ERC20 balance')
 		assert.equal(token_owner, account_b,'Incorrect token owner')
 		}
