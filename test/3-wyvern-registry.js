@@ -87,13 +87,13 @@ contract('WyvernRegistry',accounts => {
     let registry = await WyvernRegistry.deployed()
     let proxy = await registry.proxies(accounts[3])
     let erc20 = await TestERC20.deployed()
+
     // await Promise.all([erc20.mint(accounts[3],amount),erc20.approve(proxy,amount,{from: accounts[3]})])
-    await erc20.mint(accounts[3],amount)
+    let account0Nonce = await web3.eth.getTransactionCount(accounts[0])
+    await erc20.mint(accounts[3],amount, {from: accounts[0], nonce: account0Nonce})
     await erc20.approve(proxy,amount,{from: accounts[3]})
 
     let contract = new web3.eth.Contract(AuthenticatedProxy.abi,proxy)
-    // //assert.isOk(await contract.methods.receiveApproval(accounts[3],amount,erc20.address,'0x').send({from: accounts[3]}))
-
     assert.isOk(await contract.methods.receiveApproval(accounts[3],amount,erc20.address,'0x').send({from: accounts[3]}))
   })
 
