@@ -13,7 +13,7 @@ const chainIds = {
   theta_mainnet: 361,
   theta_testnet: 365,
   theta_privatenet: 366,
-  ganache: 100,
+  ganache: 366,
 }
 
 const personalSignPrefixes = {

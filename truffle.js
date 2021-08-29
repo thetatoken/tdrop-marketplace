@@ -21,8 +21,8 @@ module.exports = {
   networks: {
     ganache: {
       host: "localhost",
-      port: 8545,
-      network_id: "*",
+      port: 18888,
+      network_id: 366,
     },
     
     theta_privatenet: {
