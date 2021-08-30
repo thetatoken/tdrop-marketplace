@@ -301,7 +301,7 @@ contract ExchangeCore is ReentrancyGuarded, StaticCaller, EIP712 {
         emit OrderFillChanged(hash, msg.sender, fill);
     }
 
-    function atomicMatch(Order memory firstOrder, Call memory firstCall, Order memory secondOrder, Call memory secondCall, bytes memory signatures, bytes32 metadata)
+    function atomicMatch(Order memory firstOrder, Call memory firstCall, Order memory secondOrder, Call memory secondCall, bytes memory signatures, bytes32 metadata, uint adjustedValue)
         internal
         reentrancyGuard
     {
@@ -335,10 +335,10 @@ contract ExchangeCore is ReentrancyGuarded, StaticCaller, EIP712 {
 
         /* INTERACTIONS */
 
-        /* Transfer any msg.value.
+        /* Transfer any adjustedValue.
            This is the first "asymmetric" part of order matching: if an order requires Ether, it must be the first order. */
-        if (msg.value > 0) {
-            address(uint160(firstOrder.maker)).transfer(msg.value);
+        if (adjustedValue > 0) {
+            address(uint160(firstOrder.maker)).transfer(adjustedValue);
         }
 
         /* Execute first call, assert success.
