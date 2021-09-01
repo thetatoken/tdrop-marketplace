@@ -362,7 +362,7 @@ contract ExchangeCore is ReentrancyGuarded, StaticCaller, EIP712 {
         uint firstFill = executeStaticCall(firstOrder, firstCall, secondOrder, secondCall, msg.sender, msg.value, previousFirstFill);
 
         /* Execute second order static call, assert success, capture returned new fill. */
-        uint secondFill = executeStaticCall(secondOrder, secondCall, firstOrder, firstCall, msg.sender, uint(0), previousSecondFill);
+        uint secondFill = executeStaticCall(secondOrder, secondCall, firstOrder, firstCall, msg.sender, msg.value, previousSecondFill);
 
         /* EFFECTS */
 

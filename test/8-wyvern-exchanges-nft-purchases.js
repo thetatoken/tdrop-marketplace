@@ -89,6 +89,10 @@ contract('WyvernExchange-NFT-Purchase', (accounts) => {
     })
   
     it('purchase ERC721 NFT with TFuel', async () => {
+        // NOTE: the (msgValue == price) check in StaticMarket.ETHForERC721() and StaticMarket.ERC721ForETH()
+        //       require that (msg.value == sellingPrice && msg.value == buyingPrice) for NFT/TFuel trade.
+        //       i.e. for NFT/TFuel trandes, sellingPrice and buyingPrice need to be identical, otherwise the 
+        //       atomicMatch() will fail
         let nftTokenID      = 7777;
         let sellingPrice    = 99;
         let buyingPrice     = 99;
@@ -138,7 +142,7 @@ contract('WyvernExchange-NFT-Purchase', (accounts) => {
 
         // -------------- Execute the NFT Trade -------------- //
 
-        await exchange.atomicMatchWith(one, sigOne, firstCall, two, sigTwo, secondCall, ZERO_BYTES32, {from: nftBuyer, value: buyingPrice})
+        await exchange.atomicMatchWith(one, sigOne, firstCall, two, sigTwo, secondCall, ZERO_BYTES32, {from: nftBuyer, value: sellingPrice})
 
         // -------------- Verify the NFT Trade -------------- //
 

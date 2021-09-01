@@ -142,12 +142,15 @@ contract StaticMarket {
 		pure
 		returns (uint)
 	{
-		require(uints[0] == 0,"ETHForERC721: Zero value required");
+		uint msgValue = uints[0];
+		require(msgValue > 0,"ETHForERC721: value needs to be positive");
 		require(howToCalls[0] == AuthenticatedProxy.HowToCall.Call, "ETHForERC721: call must be a direct call");
 
 		(address[2] memory tokenGiveGet, uint256[2] memory tokenIdAndPrice) = abi.decode(extra, (address[2], uint256[2]));
 
-		require(tokenIdAndPrice[1] > 0,"ETHForERC721: ERC721 price must be larger than zero");
+		uint price = tokenIdAndPrice[1];
+		require(price > 0, "ETHForERC721: ERC721 price must be larger than zero");
+		require(msgValue == price, "ETHForERC721: ERC721 price must be equal to msgValue");
 		require(addresses[2] == tokenGiveGet[0], "ETHForERC721: call target must equal address of token to give");
 		require(addresses[5] == tokenGiveGet[1], "ETHForERC721: countercall target must equal address of token to get");
 
