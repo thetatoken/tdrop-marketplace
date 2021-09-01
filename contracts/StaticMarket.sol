@@ -111,6 +111,51 @@ contract StaticMarket {
 		return new_fill;
 	}
 
+	function ERC721ForETH(bytes memory extra,
+		address[7] memory addresses, AuthenticatedProxy.HowToCall[2] memory howToCalls, uint[6] memory uints,
+		bytes memory data, bytes memory counterdata)
+		public
+		pure
+		returns (uint)
+	{
+		uint msgValue = uints[0];
+		require(msgValue > 0,"ERC721ForETH: value needs to be positive");
+		require(howToCalls[0] == AuthenticatedProxy.HowToCall.Call, "ERC721ForETH: call must be a direct call");
+
+		(address[2] memory tokenGiveGet, uint256[2] memory tokenIdAndPrice) = abi.decode(extra, (address[2], uint256[2]));
+
+		uint price = tokenIdAndPrice[1];
+		require(price > 0, "ERC721ForETH: ERC721 price must be larger than zero");
+		require(msgValue == price, "ERC721ForETH: ERC721 price must be equal to msgValue");
+		require(addresses[2] == tokenGiveGet[0], "ERC721ForETH: call target must equal address of token to give");
+		require(addresses[5] == tokenGiveGet[1], "ERC721ForETH: countercall target must equal address of token to get");
+
+		checkERC721Side(data,addresses[1],addresses[4],tokenIdAndPrice[0]);
+		
+		return 1;
+	}
+
+	function ETHForERC721(bytes memory extra,
+		address[7] memory addresses, AuthenticatedProxy.HowToCall[2] memory howToCalls, uint[6] memory uints,
+		bytes memory data, bytes memory counterdata)
+		public
+		pure
+		returns (uint)
+	{
+		require(uints[0] == 0,"ETHForERC721: Zero value required");
+		require(howToCalls[0] == AuthenticatedProxy.HowToCall.Call, "ETHForERC721: call must be a direct call");
+
+		(address[2] memory tokenGiveGet, uint256[2] memory tokenIdAndPrice) = abi.decode(extra, (address[2], uint256[2]));
+
+		require(tokenIdAndPrice[1] > 0,"ETHForERC721: ERC721 price must be larger than zero");
+		require(addresses[2] == tokenGiveGet[0], "ETHForERC721: call target must equal address of token to give");
+		require(addresses[5] == tokenGiveGet[1], "ETHForERC721: countercall target must equal address of token to get");
+
+		checkERC721Side(counterdata,addresses[4],addresses[1],tokenIdAndPrice[0]);
+		
+		return 1;
+	}
+
 	function ERC721ForERC20(bytes memory extra,
 		address[7] memory addresses, AuthenticatedProxy.HowToCall[2] memory howToCalls, uint[6] memory uints,
 		bytes memory data, bytes memory counterdata)

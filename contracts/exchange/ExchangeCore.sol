@@ -337,7 +337,7 @@ contract ExchangeCore is ReentrancyGuarded, StaticCaller, EIP712 {
 
         /* Transfer any adjustedValue.
            This is the first "asymmetric" part of order matching: if an order requires Ether, it must be the first order. */
-        if (adjustedValue > 0) {
+        if (adjustedValue > 0) { // adjustedValue: the amount of Ether/TFuel sent via the tx after deducting the platform fee
             address(uint160(firstOrder.maker)).transfer(adjustedValue);
         }
 
@@ -346,7 +346,9 @@ contract ExchangeCore is ReentrancyGuarded, StaticCaller, EIP712 {
         require(executeCall(ProxyRegistryInterface(firstOrder.registry), firstOrder.maker, firstCall), "First call failed");
 
         /* Execute second call, assert success. */
-        require(executeCall(ProxyRegistryInterface(secondOrder.registry), secondOrder.maker, secondCall), "Second call failed");
+        if (secondCall.target != address(0)) { // to support purchasing with Ether/TFuel, skip the second call if the target is 0x0
+            require(executeCall(ProxyRegistryInterface(secondOrder.registry), secondOrder.maker, secondCall), "Second call failed");
+        }
 
         /* Static calls must happen after the effectful calls so that they can check the resulting state. */
 
