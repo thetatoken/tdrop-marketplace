@@ -301,7 +301,7 @@ contract ExchangeCore is ReentrancyGuarded, StaticCaller, EIP712 {
         emit OrderFillChanged(hash, msg.sender, fill);
     }
 
-    function atomicMatch(Order memory firstOrder, Call memory firstCall, Order memory secondOrder, Call memory secondCall, bytes memory signatures, bytes32 metadata, uint adjustedValue)
+    function atomicMatch(Order memory firstOrder, Call memory firstCall, Order memory secondOrder, Call memory secondCall, bytes memory signatures, bytes32 metadata)
         internal
         reentrancyGuard
     {
@@ -335,10 +335,11 @@ contract ExchangeCore is ReentrancyGuarded, StaticCaller, EIP712 {
 
         /* INTERACTIONS */
 
-        /* Transfer any adjustedValue.
+        /* Transfer any sellerValue.
            This is the first "asymmetric" part of order matching: if an order requires Ether, it must be the first order. */
-        if (adjustedValue > 0) { // adjustedValue: the amount of Ether/TFuel sent via the tx after deducting the platform fee
-            address(uint160(firstOrder.maker)).transfer(adjustedValue);
+        uint sellerValue = _chargePlatformFee(firstOrder, firstCall, secondOrder, secondCall, false);
+        if (sellerValue > 0) { // sellerValue: the amount of Ether/TFuel sent via the tx after deducting the platform fee
+            address(uint160(firstOrder.maker)).transfer(sellerValue);
         }
 
         /* Execute first call, assert success.
@@ -384,6 +385,13 @@ contract ExchangeCore is ReentrancyGuarded, StaticCaller, EIP712 {
 
         /* Log match event. */
         emit OrdersMatched(firstHash, secondHash, firstOrder.maker, secondOrder.maker, firstFill, secondFill, metadata);
+    }
+
+    function _chargePlatformFee(Order memory firstOrder, Call memory firstCall, Order memory secondOrder, Call memory secondCall, bool isAPrimaryMarketSale)
+        internal virtual
+        returns (uint sellerValue) {
+        sellerValue = msg.value; // zero charge by default, send the full value to the seller
+        return sellerValue;
     }
 
 }

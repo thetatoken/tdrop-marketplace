@@ -79,8 +79,7 @@ contract Exchange is ExchangeCore {
             Order(address(uints[8]), address(uints[9]), address(uints[10]), staticSelectors[1], secondExtradata, uints[11], uints[12], uints[13], uints[14]),
             Call(address(uints[15]), AuthenticatedProxy.HowToCall(howToCalls[1]), secondCalldata),
             signatures,
-            metadata,
-            msg.value
+            metadata
         );
     }
 

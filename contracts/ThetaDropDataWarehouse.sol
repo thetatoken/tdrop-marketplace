@@ -23,25 +23,19 @@ contract ThetaDropDataWarehouse {
     /// @notice map[NFTAddress][TokenID] => Highest sale price in TFuelWei
     /// for TNT721, it represents the highest historical transaction value of the NFT token with the specified tokenID
     /// for TNT1155, it represents the highest historical transaction value of a single (i.e. value = 1) NFT token with the specified tokenID
-    mapping(address => mapping(uint => uint)) public highestSaleInTFuelWei;
+    mapping(address => mapping(uint => uint)) public highestSellingPriceInTFuelWei;
 
-    /// @notice whitelisted TNT721 NFT tokens for liquidity mining
-    mapping(address => bool) public whitelistedTNT721NFTTokenMap;
-
-    /// @notice a list of whitelisted TNT721 NFT tokens for liquidity mining
-    address[] public whitelistedTNT721NFTTokens;
-
-    /// @notice whitelisted TNT1155 NFT tokens for liquidity mining
-    mapping(address => bool) public whitelistedTNT1155NFTTokenMap;
-
-    /// @notice a list of whitelisted TNT1155 NFT tokens for liquidity mining
-    address[] public whitelistedTNT1155NFTTokens;
+    /// @notice map[NFTAddress][TokenID] => whether the NFT has been sold in the primary market
+    mapping(address => mapping(uint => bool)) public soldInPrimaryMarket;
 
     /// @notice whitelisted TNT20 payment tokens (i.e. stablecoins)
     mapping(address => bool) public whitelistedTNT20PaymentTokenMap;
 
-    /// @notice a list of whitelisted TNT20 payment tokens (i.e. stablecoins)
-    address[] public whitelistedTNT20PaymentTokens;
+    /// @notice whitelisted TNT721 NFT tokens for liquidity mining
+    mapping(address => bool) public whitelistedTNT721NFTTokenMap;
+
+    /// @notice whitelisted TNT1155 NFT tokens for liquidity mining
+    mapping(address => bool) public whitelistedTNT1155NFTTokenMap;
 
     /// @notice An event thats emitted when the super admin address is changed
     event SuperAdminChanged(address superAdmin, address newSuperAdmin);
@@ -87,14 +81,46 @@ contract ThetaDropDataWarehouse {
         marketplace = marketplace_;
     }
 
+    function hasBeenSoldInThePrimaryMarket(address nftAddr, uint tokenID) public view returns (bool) {
+        return soldInPrimaryMarket[nftAddr][tokenID];
+    }
+
+    function markAsSoldInThePrimaryMarket(address nftAddr, uint tokenID) onlyMarketplace public {
+        soldInPrimaryMarket[nftAddr][tokenID] = true;
+    }
+
     function getHighestSellingPriceInTFuelWei(address nftAddr, uint tokenID) public view returns (uint) {
-        return highestSaleInTFuelWei[nftAddr][tokenID];
+        return highestSellingPriceInTFuelWei[nftAddr][tokenID];
     }
 
     function updateHighestSellingPriceInTFuelWei(address nftAddr, uint tokenID, uint newHigestPrice) onlyMarketplace public {
         uint currHighestPrice = getHighestSellingPriceInTFuelWei(nftAddr, tokenID);
         require(newHigestPrice > currHighestPrice, "the new highest price needs to be strictly higher than the current higest");
-        highestSaleInTFuelWei[nftAddr][tokenID] = newHigestPrice;
+        highestSellingPriceInTFuelWei[nftAddr][tokenID] = newHigestPrice;
+    }
+
+    function isAWhitelistedPaymentToken(address tokenAddr) public view returns (bool) {
+        return whitelistedTNT20PaymentTokenMap[tokenAddr];
+    }
+
+    function whitelistPaymentToken(address tokenAddr, bool isWhitelisted) onlyAdmin public {
+        whitelistedTNT20PaymentTokenMap[tokenAddr] = isWhitelisted;
+    }
+
+    function isAWhitelistedTNT721NFTToken(address tokenAddr) public view returns (bool) {
+        return whitelistedTNT721NFTTokenMap[tokenAddr];
+    }
+
+    function whitelistTNT721NFTToken(address tokenAddr, bool isWhitelisted) onlyAdmin public {
+        whitelistedTNT721NFTTokenMap[tokenAddr] = isWhitelisted;
+    }
+
+    function isAWhitelistedTNT1155NFTToken(address tokenAddr) public view returns (bool) {
+        return whitelistedTNT1155NFTTokenMap[tokenAddr];
+    }
+
+    function whitelistTNT1155NFTToken(address tokenAddr, bool isWhitelisted) onlyAdmin public {
+        whitelistedTNT1155NFTTokenMap[tokenAddr] = isWhitelisted;
     }
 
     modifier onlySuperAdmin { 

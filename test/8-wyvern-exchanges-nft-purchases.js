@@ -84,7 +84,7 @@ contract('WyvernExchange-NFT-Purchase', (accounts) => {
 
         let nftSellerErc20Balance = await erc20.balanceOf(nftSeller)
         let tokenOwner = await erc721.ownerOf(nftTokenID)
-        assert.equal(nftSellerErc20Balance.toNumber(), sellingPrice, 'Incorrect ERC20 balance')
+        assert.equal(nftSellerErc20Balance.toNumber(), buyingPrice, 'Incorrect ERC20 balance')
         assert.equal(tokenOwner, nftBuyer, 'Incorrect token owner')
     })
   
@@ -105,6 +105,7 @@ contract('WyvernExchange-NFT-Purchase', (accounts) => {
         await erc721.mint(nftSeller, nftTokenID)
 
         // -------------- Account registration and setup -------------- //
+
         // NFT Seller
         await registry.registerProxy({from: nftSeller})
         let sellerProxy = await registry.proxies(nftSeller)
@@ -142,6 +143,7 @@ contract('WyvernExchange-NFT-Purchase', (accounts) => {
 
         // -------------- Execute the NFT Trade -------------- //
 
+        // atomicMatchWith needs to be called by the nftBuyer since the buyer needs to pay the TFuel
         await exchange.atomicMatchWith(one, sigOne, firstCall, two, sigTwo, secondCall, ZERO_BYTES32, {from: nftBuyer, value: sellingPrice})
 
         // -------------- Verify the NFT Trade -------------- //
