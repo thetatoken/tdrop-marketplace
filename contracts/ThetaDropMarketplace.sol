@@ -78,7 +78,7 @@ contract ThetaDropMarketplace is ExchangeCore {
 
     event PlatformFeeRecipientChanged(address platformFeeRecipient, address newPlatformFeeRecipient);
 
-    event NFTTraded(address seller, address buyer, address nftTokenAddress, uint nftTokenID, uint nftAmount, address paymentTokenAddress, uint paymentTokenAmount, uint tdropMined);
+    event NFTTraded(address indexed seller, address indexed buyer, address indexed nftTokenAddress, uint nftTokenID, uint nftAmount, address paymentTokenAddress, uint paymentTokenAmount, uint tdropMined);
 
     constructor (uint chainId, address[] memory registryAddrs, bytes memory customPersonalSignPrefix,
                  address superAdmin_, address admin_, address payable platformFeeRecipient_,
