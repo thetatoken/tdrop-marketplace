@@ -150,6 +150,19 @@ const wrap = (inst) => {
         web3.eth.abi.encodeParameters(['uint8', 'bytes32', 'bytes32'], [countersig.v, countersig.r, countersig.s]) + (countersig.suffix || '')
       ]),
       misc
+    ),
+    tradeNFT: (order, sig, call, counterorder, countersig, countercall, metadata, misc) => inst.tradeNFT(
+      [order.registry, order.maker, order.staticTarget, order.maximumFill, order.listingTime, order.expirationTime, order.salt, call.target,
+        counterorder.registry, counterorder.maker, counterorder.staticTarget, counterorder.maximumFill, counterorder.listingTime, counterorder.expirationTime, counterorder.salt, countercall.target],
+      [order.staticSelector, counterorder.staticSelector],
+      order.staticExtradata, call.data, counterorder.staticExtradata, countercall.data,
+      [call.howToCall, countercall.howToCall],
+      metadata,
+      web3.eth.abi.encodeParameters(['bytes', 'bytes'], [
+        web3.eth.abi.encodeParameters(['uint8', 'bytes32', 'bytes32'], [sig.v, sig.r, sig.s]) + (sig.suffix || ''),
+        web3.eth.abi.encodeParameters(['uint8', 'bytes32', 'bytes32'], [countersig.v, countersig.r, countersig.s]) + (countersig.suffix || '')
+      ]),
+      misc
     )
   }
   obj.sign = (order, account) => {

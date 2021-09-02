@@ -18,7 +18,7 @@ interface IDataWarehouse {
  * @title ThetaDropMarketplace
  * @author ThetaDrop Marketplace Protocol Developers
  */
-contract ThetaDropMarketplace is Exchange {
+contract ThetaDropMarketplace is ExchangeCore {
 
     using SafeMath for uint;
 
@@ -33,9 +33,11 @@ contract ThetaDropMarketplace is Exchange {
         uint tdropMined;
     }
 
-    string public constant name = "TDrop Marketplace";
+    string public constant name = "Wyvern Exchange";
   
-    string public constant version = "1.0.0";
+    string public constant version = "3.1";
+
+    string public constant codename = "Ancalagon";
 
     /// @notice The super admin address
     address public superAdmin;
@@ -79,7 +81,9 @@ contract ThetaDropMarketplace is Exchange {
     event NFTTraded(address seller, address buyer, address nftTokenAddress, uint nftTokenID, uint nftAmount, address paymentTokenAddress, uint paymentTokenAmount, uint tdropMined);
 
     constructor (uint chainId, address[] memory registryAddrs, bytes memory customPersonalSignPrefix,
-                 address superAdmin_, address admin_, address payable platformFeeRecipient_) {
+                 address superAdmin_, address admin_, address payable platformFeeRecipient_,
+                 uint primaryMarketPlatformFeeSplitBasisPoints_,
+                 uint secondaryMarketPlatformFeeSplitBasisPoints_) {
         DOMAIN_SEPARATOR = hash(EIP712Domain({
             name              : name,
             version           : version,
@@ -101,6 +105,9 @@ contract ThetaDropMarketplace is Exchange {
         emit PlatformFeeRecipientChanged(address(0), platformFeeRecipient);
         paused = false;
         miningOnlyForWhitelistedNFTs = true;
+        liquidityMiningEnabled = false;
+        primaryMarketPlatformFeeSplitBasisPoints = primaryMarketPlatformFeeSplitBasisPoints_;
+        secondaryMarketPlatformFeeSplitBasisPoints = secondaryMarketPlatformFeeSplitBasisPoints_;
     }
 
     function setSuperAdmin(address superAdmin_) onlySuperAdmin external {
@@ -195,8 +202,8 @@ contract ThetaDropMarketplace is Exchange {
 
     function _sanityChecks(Order memory firstOrder, Call memory firstCall, Order memory secondOrder, Call memory secondCall, bytes32 metadata) internal returns (bool) {        
         // check if the orders and calls are well-formed
-        require(firstOrder.staticExtradata.length == 100, "firstCalldata is malformed");
-        require(secondOrder.staticExtradata.length == 100, "secondCalldata is malformed");
+        require(firstOrder.staticExtradata.length == 128, "firstCalldata is malformed");
+        require(secondOrder.staticExtradata.length == 128, "secondCalldata is malformed");
         require(metadata == bytes32(0), "metadata should be empty");
 
         // sell side
@@ -242,8 +249,12 @@ contract ThetaDropMarketplace is Exchange {
         return 0;
     }
 
-    function _chargePlatformFee(Order memory firstOrder, Call memory firstCall, Order memory secondOrder, Call memory secondCall, bool isAPrimaryMarketSale)
+    function _chargePlatformFee(Order memory firstOrder, Call memory firstCall, Order memory secondOrder, Call memory secondCall)
         internal virtual override returns (uint sellerValue) {
+        address nftTokenAddress   = _getNFTTokenAddress(firstCall);
+        uint    nftTokenID        = _getNFTTokenID(firstOrder);
+        bool isAPrimaryMarketSale = _isAPrimaryMarketSale(nftTokenAddress, nftTokenID);
+
         uint platformFeeSplitBasisPoints = secondaryMarketPlatformFeeSplitBasisPoints;
         if (isAPrimaryMarketSale) {
             platformFeeSplitBasisPoints = primaryMarketPlatformFeeSplitBasisPoints;
@@ -312,7 +323,7 @@ contract ThetaDropMarketplace is Exchange {
     }
 
     function _getPaymentTokenAmount(Order memory order) internal pure returns (uint) {
-        uint amount = abi.decode(ArrayUtils.arraySlice(order.staticExtradata,72,32),(uint));
+        uint amount = abi.decode(ArrayUtils.arraySlice(order.staticExtradata, 96, 32),(uint));
         return amount;
     }
 
@@ -321,7 +332,7 @@ contract ThetaDropMarketplace is Exchange {
     }
 
     function _getNFTTokenID(Order memory order) internal pure returns (uint) {
-        uint tokenID = abi.decode(ArrayUtils.arraySlice(order.staticExtradata,40,32),(uint));
+        uint tokenID = abi.decode(ArrayUtils.arraySlice(order.staticExtradata, 64, 32),(uint));
         return tokenID;
     }
 
@@ -337,7 +348,7 @@ contract ThetaDropMarketplace is Exchange {
 
         NFTTradeMetadata memory tm;
         tm.seller = firstOrder.maker;
-        tm.buyer = firstOrder.maker;
+        tm.buyer = secondOrder.maker;
         tm.nftTokenAddress = nftToken;
         tm.nftTokenID = nftTokenID;
         tm.nftAmount = 1; // TODO: support TNT1155

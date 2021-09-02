@@ -337,7 +337,7 @@ contract ExchangeCore is ReentrancyGuarded, StaticCaller, EIP712 {
 
         /* Transfer any sellerValue.
            This is the first "asymmetric" part of order matching: if an order requires Ether, it must be the first order. */
-        uint sellerValue = _chargePlatformFee(firstOrder, firstCall, secondOrder, secondCall, false);
+        uint sellerValue = _chargePlatformFee(firstOrder, firstCall, secondOrder, secondCall);
         if (sellerValue > 0) { // sellerValue: the amount of Ether/TFuel sent via the tx after deducting the platform fee
             address(uint160(firstOrder.maker)).transfer(sellerValue);
         }
@@ -387,7 +387,7 @@ contract ExchangeCore is ReentrancyGuarded, StaticCaller, EIP712 {
         emit OrdersMatched(firstHash, secondHash, firstOrder.maker, secondOrder.maker, firstFill, secondFill, metadata);
     }
 
-    function _chargePlatformFee(Order memory firstOrder, Call memory firstCall, Order memory secondOrder, Call memory secondCall, bool isAPrimaryMarketSale)
+    function _chargePlatformFee(Order memory firstOrder, Call memory firstCall, Order memory secondOrder, Call memory secondCall)
         internal virtual
         returns (uint sellerValue) {
         sellerValue = msg.value; // zero charge by default, send the full value to the seller
