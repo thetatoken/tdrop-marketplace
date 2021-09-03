@@ -1,8 +1,6 @@
 pragma abicoder v2;
 pragma solidity 0.7.5;
 
-import "./lib/TradeUtils.sol";
-
 /**
  * @title ThetaDropDataWarehouse
  * @author ThetaDrop Marketplace Protocol Developers
@@ -27,11 +25,8 @@ contract ThetaDropDataWarehouse {
     /// for TNT1155, it represents the highest historical transaction value of a single (i.e. value = 1) NFT token with the specified tokenID
     mapping(address => mapping(uint => uint)) public highestSellingPriceInTFuelWei;
 
-    /// @notice map[NFTAddress][TokenID] => NFTTradeTimestamp
-    mapping(address => mapping(uint => TradeUtils.NFTTradeTimestamp)) public tradeTimestampMap;
-
-    /// @notice map[NFTAddress][TokenID] => whether the NFT has been sold in the primary market
-    mapping(address => mapping(uint => bool)) public soldInPrimaryMarket;
+    /// @notice map[NFTAddress][TokenID] => NFTTradeBlockHeight
+    mapping(address => mapping(uint => uint)) public tradeBlockHeightMap;
 
     /// @notice whitelisted TNT20 payment tokens (i.e. stablecoins)
     mapping(address => bool) public whitelistedTNT20PaymentTokenMap;
@@ -86,14 +81,6 @@ contract ThetaDropDataWarehouse {
         marketplace = marketplace_;
     }
 
-    function hasBeenSoldInThePrimaryMarket(address nftAddr, uint tokenID) public view returns (bool) {
-        return soldInPrimaryMarket[nftAddr][tokenID];
-    }
-
-    function markAsSoldInThePrimaryMarket(address nftAddr, uint tokenID) onlyMarketplace public {
-        soldInPrimaryMarket[nftAddr][tokenID] = true;
-    }
-
     function getHighestSellingPriceInTFuelWei(address nftAddr, uint tokenID) public view returns (uint) {
         return highestSellingPriceInTFuelWei[nftAddr][tokenID];
     }
@@ -104,12 +91,12 @@ contract ThetaDropDataWarehouse {
         highestSellingPriceInTFuelWei[nftAddr][tokenID] = newHigestPrice;
     }
 
-    function updateNFTTradeTimestamp(address nftAddr, uint tokenID) onlyMarketplace public {
-        tradeTimestampMap[nftAddr][tokenID] = TradeUtils.NFTTradeTimestamp(block.number, block.timestamp);
+    function updateNFTTradeBlockHeight(address nftAddr, uint tokenID) onlyMarketplace public {
+        tradeBlockHeightMap[nftAddr][tokenID] = block.number;
     }
 
-    function getNFTTradeTimestamp(address nftAddr, uint tokenID) public view returns (TradeUtils.NFTTradeTimestamp memory) {
-        return tradeTimestampMap[nftAddr][tokenID];
+    function getLastNFTTradeBlockHeight(address nftAddr, uint tokenID) public view returns (uint) {
+        return tradeBlockHeightMap[nftAddr][tokenID];
     }
 
     function isAWhitelistedPaymentToken(address tokenAddr) public view returns (bool) {

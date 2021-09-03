@@ -3,7 +3,6 @@ pragma solidity 0.7.5;
 
 import "./lib/ArrayUtils.sol";
 import "./lib/ExtMath.sol";
-import "./lib/TradeUtils.sol";
 import "./exchange/ExchangeCore.sol";
 
 interface ITDropToken {
@@ -13,13 +12,11 @@ interface ITDropToken {
 interface IDataWarehouse {
     function getHighestSellingPriceInTFuelWei(address nftAddr, uint tokenID) external returns (uint);
     function updateHighestSellingPriceInTFuelWei(address nftAddr, uint tokenID, uint newHigestPrice) external;
-    function getNFTTradeTimestamp(address nftAddr, uint tokenID) external returns (TradeUtils.NFTTradeTimestamp memory);
-    function updateNFTTradeTimestamp(address nftAddr, uint tokenID) external;
+    function getLastNFTTradeBlockHeight(address nftAddr, uint tokenID) external returns (uint);
+    function updateNFTTradeBlockHeight(address nftAddr, uint tokenID) external;
     function isAWhitelistedPaymentToken(address tokenAddr) external returns (bool);
     function isAWhitelistedTNT721NFTToken(address tokenAddr) external returns (bool);
     function isAWhitelistedTNT1155NFTToken(address tokenAddr) external returns (bool);
-    function hasBeenSoldInThePrimaryMarket(address nftAddr, uint tokenID) external returns (bool);
-    function markAsSoldInThePrimaryMarket(address nftAddr, uint tokenID) external;
 }
 
 /**
@@ -263,12 +260,7 @@ contract ThetaDropMarketplace is ExchangeCore {
             metadata
         );
 
-        bool isAPrimaryMarketSale = _isAPrimaryMarketSale(tm.nftTokenAddress, tm.nftTokenID);
-        if (isAPrimaryMarketSale) {
-            dataWarehouse.markAsSoldInThePrimaryMarket(tm.nftTokenAddress, tm.nftTokenID);
-        }
-
-        _updateNFTTradeTimestamp(tm.nftTokenAddress, tm.nftTokenID);
+        _updateNFTTradeBlockHeight(tm.nftTokenAddress, tm.nftTokenID);
 
         emit NFTTraded(tm.seller, tm.buyer, tm.nftTokenAddress, tm.nftTokenID, tm.nftAmount, tm.paymentTokenAddress, tm.paymentTokenAmount, tm.tdropMined);
     }
@@ -323,7 +315,7 @@ contract ThetaDropMarketplace is ExchangeCore {
         // TODO: Support TNT-1155
         uint highestSellingPriceInTFuelWei = dataWarehouse.getHighestSellingPriceInTFuelWei(tm.nftTokenAddress, tm.nftTokenID);
         if (priceInTFuelWei > highestSellingPriceInTFuelWei) {
-            uint lastTradeBlockHeight = dataWarehouse.getNFTTradeTimestamp(tm.nftTokenAddress, tm.nftTokenID).blockHeight;
+            uint lastTradeBlockHeight = dataWarehouse.getLastNFTTradeBlockHeight(tm.nftTokenAddress, tm.nftTokenID);
             uint blockHeight = block.number;
 
             uint normalizedPriceIncrease = SafeMath.div(SafeMath.sub(priceInTFuelWei, highestSellingPriceInTFuelWei), SafeMath.add(lmp.gamma, 1));
@@ -426,8 +418,8 @@ contract ThetaDropMarketplace is ExchangeCore {
         secondCall.data = abi.encodeWithSignature("transferFrom(address,address,uint256)", buyerAddr, sellerAddr, adjustedPrice);
     }
 
-    function _updateNFTTradeTimestamp(address nftTokenAddress, uint nftTokenID) internal {
-        dataWarehouse.updateNFTTradeTimestamp(nftTokenAddress, nftTokenID);
+    function _updateNFTTradeBlockHeight(address nftTokenAddress, uint nftTokenID) internal {
+        dataWarehouse.updateNFTTradeBlockHeight(nftTokenAddress, nftTokenID);
     }
 
     function _getPaymentTokenAddress(Call memory call) internal pure returns (address) {
@@ -471,7 +463,8 @@ contract ThetaDropMarketplace is ExchangeCore {
     }
 
     function _isAPrimaryMarketSale(address nftTokenAddress, uint nftTokenID) internal returns (bool) {
-        bool isAPrimaryMarketSale = !dataWarehouse.hasBeenSoldInThePrimaryMarket(nftTokenAddress, nftTokenID);
+        uint lastTradeBlockHeight = dataWarehouse.getLastNFTTradeBlockHeight(nftTokenAddress, nftTokenID);
+        bool isAPrimaryMarketSale = (lastTradeBlockHeight == 0);
         return isAPrimaryMarketSale;
     }
 

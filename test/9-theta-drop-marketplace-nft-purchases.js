@@ -214,12 +214,12 @@ contract('ThetaDrop-Marketplace-NFT-Purchases', (accounts) => {
         let buyerTDropBalance = await tdropToken.balanceOf(nftBuyer)
         let sellerTDropBalance = await tdropToken.balanceOf(nftSeller)
 
-        console.log("buyerFinalEthBalance:                 ", buyerFinalEthBalance)
-        console.log("sellerFinalEthBalance:                ", sellerFinalEthBalance)
-        console.log("platformFeeRecipientFinalEthBalance:  ", platformFeeRecipientFinalEthBalance)
-        console.log("buyerTDropBalance:                    ", buyerTDropBalance.toString())
-        console.log("sellerTDropBalance:                   ", sellerTDropBalance.toString())
-
+        // console.log("buyerFinalEthBalance:                 ", buyerFinalEthBalance)
+        // console.log("sellerFinalEthBalance:                ", sellerFinalEthBalance)
+        // console.log("platformFeeRecipientFinalEthBalance:  ", platformFeeRecipientFinalEthBalance)
+        // console.log("buyerTDropBalance:                    ", buyerTDropBalance.toString())
+        // console.log("sellerTDropBalance:                   ", sellerTDropBalance.toString())
+        
         split = primaryMarketPlatformFeeSplitBasisPoints / 10000.0
         expectedPlatformFee = Math.floor(buyingPrice * split)
         expectedNFTSellerEarning = buyingPrice - expectedPlatformFee
@@ -232,5 +232,7 @@ contract('ThetaDrop-Marketplace-NFT-Purchases', (accounts) => {
 
         assert.equal(sellerFinalEthBalanceBN.sub(sellerInitialEthBalanceBN), expectedNFTSellerEarning, 'Incorrect amount of TFuel transferred')
         assert.equal(platformFeeRecipientFinalEthBalanceBN.sub(platformFeeRecipientInitialEthBalanceBN), expectedPlatformFee, 'Incorrect platform fee transferred')
+        assert.isTrue(sellerTDropBalance.cmp(new BN('0')) == 0) // sellerTDropBalance == 0
+        assert.isTrue(buyerTDropBalance.cmp(epsilon) == 1) // buyerTDropBalance > epsilon
     })
 })
