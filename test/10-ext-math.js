@@ -2,8 +2,7 @@ const TestExtMath = artifacts.require('TestExtMath')
 const Web3 = require('web3')
 const provider = new Web3.providers.HttpProvider('http://localhost:18888')
 const web3 = new Web3(provider)
-
-BN = web3.utils.BN
+const BN = web3.utils.BN
 
 contract('Test ExtMath', (accounts) => {
 

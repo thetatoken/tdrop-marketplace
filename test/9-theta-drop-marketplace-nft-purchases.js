@@ -5,14 +5,22 @@ const StaticMarket = artifacts.require('StaticMarket')
 const WyvernRegistry = artifacts.require('WyvernRegistry')
 const TestERC20 = artifacts.require('TestERC20')
 const TestERC721 = artifacts.require('TestERC721')
+const MockTDropToken = artifacts.require('MockTDropToken')
 
 const Web3 = require('web3')
 const provider = new Web3.providers.HttpProvider('http://localhost:18888')
 const web3 = new Web3(provider)
 const {wrap,ZERO_BYTES32, CHAIN_ID} = require('./aux')
+const BN = web3.utils.BN
 
 const primaryMarketPlatformFeeSplitBasisPoints = 3000
 const secondaryMarketPlatformFeeSplitBasisPoints = 1000
+const epsilon = new BN('5000000000000000000') // 5 * 10**18, 5 TDrop
+const alpha = new BN('1000000000000000000')
+//const gamma = new BN('100000000000000000').sub(new BN(1))
+const gamma = new BN('10000000000000').sub(new BN(1))
+const omega = new BN('100000');
+const maxRewardPerTrade = new BN('1000000000000000000000') // 1000 * 10**18, 1000 TDrop
 
 contract('ThetaDrop-Marketplace-NFT-Purchases', (accounts) => {
 
@@ -21,21 +29,24 @@ contract('ThetaDrop-Marketplace-NFT-Purchases', (accounts) => {
         admin = accounts[8]
         platformFeeRecipient = accounts[7]
 
+        tdropToken = await MockTDropToken.new()
         registry = await WyvernRegistry.new()
         atomicizer = await WyvernAtomicizer.new()
-        marketplace = await ThetaDropMarketplace.new(
-            CHAIN_ID, [registry.address], '0x', superAdmin, admin, platformFeeRecipient,
-            primaryMarketPlatformFeeSplitBasisPoints, secondaryMarketPlatformFeeSplitBasisPoints)
+        marketplace = await ThetaDropMarketplace.new(CHAIN_ID, [registry.address], '0x', superAdmin, admin, platformFeeRecipient, tdropToken.address)
         dataWarehouse = await ThetaDropDataWarehouse.new(superAdmin, admin)
         statici = await StaticMarket.new()
 
+        await marketplace.setPrimaryMarketPlatformFeeSplitBasisPoints(primaryMarketPlatformFeeSplitBasisPoints, {from: admin})
+        await marketplace.setSecondaryMarketPlatformFeeSplitBasisPoints(secondaryMarketPlatformFeeSplitBasisPoints, {from: admin})
         await marketplace.setDataWarehouse(dataWarehouse.address, {from: admin})
         await marketplace.enableNFTLiqudityMining(true, {from: admin})
-        await dataWarehouse.setMarketplace(marketplace.address, {from: admin})
+        await marketplace.updateLiquidityMiningParams(epsilon, alpha, gamma, omega, maxRewardPerTrade, {from: admin})
+        await marketplace.enableLiqudityMiningOnlyForWhitelistedNFTs(false, {from: admin})
 
+        await dataWarehouse.setMarketplace(marketplace.address, {from: admin})
         await registry.grantInitialAuthentication(marketplace.address)
 
-        return {registry, marketplace:wrap(marketplace), dataWarehouse, atomicizer, statici}
+        return {registry, marketplace:wrap(marketplace), dataWarehouse, atomicizer, statici, tdropToken}
     }
 
     let deploy = async contracts => Promise.all(contracts.map(contract => contract.new()))
@@ -51,7 +62,7 @@ contract('ThetaDrop-Marketplace-NFT-Purchases', (accounts) => {
         let admin            = accounts[8]
         let platformFeeRecipient = accounts[7]
 
-        let {registry, marketplace, dataWarehouse, atomicizer, statici} = await deployCoreContracts()
+        let {registry, marketplace, dataWarehouse, atomicizer, statici, tdropToken} = await deployCoreContracts()
         let marketplaceAddr = marketplace.inst.address
         let [erc721] = await deploy([TestERC721])
         let [erc20] = await deploy([TestERC20])
@@ -91,7 +102,7 @@ contract('ThetaDrop-Marketplace-NFT-Purchases', (accounts) => {
         const one = {registry: registry.address, maker: nftSeller, staticTarget: statici.address, staticSelector: selectorOne, staticExtradata: paramsOne, maximumFill: 1, listingTime: '0', expirationTime: '10000000000', salt: '11'}
         const firstData = erc721c.methods.transferFrom(nftSeller, nftBuyer, nftTokenID).encodeABI()
         const firstCall = {target: erc721.address, howToCall: 0, data: firstData}
-        let sigOne = await marketplace.sign(one, nftSeller) // in an actual implementation, this should be signed by the seller
+        let sigOne = await marketplace.sign(one, nftSeller) // in the actual implementation, this should be signed by the seller
         
         // NFT Buyer
         const selectorTwo = web3.eth.abi.encodeFunctionSignature('ERC20ForERC721(bytes,address[7],uint8[2],uint256[6],bytes,bytes)')
@@ -99,7 +110,7 @@ contract('ThetaDrop-Marketplace-NFT-Purchases', (accounts) => {
         const two = {registry: registry.address, maker: nftBuyer, staticTarget: statici.address, staticSelector: selectorTwo, staticExtradata: paramsTwo, maximumFill: 1, listingTime: '0', expirationTime: '10000000000', salt: '12'}
         const secondData = erc20c.methods.transferFrom(nftBuyer, nftSeller, buyingPrice).encodeABI()
         const secondCall = {target: erc20.address, howToCall: 0, data: secondData}
-        let sigTwo = await marketplace.sign(two, nftBuyer) // in an actual implementation, this should be signed by the buyer
+        let sigTwo = await marketplace.sign(two, nftBuyer) // in the actual implementation, this should be signed by the buyer
 
         // -------------- Execute the NFT Trade -------------- //
 
@@ -140,7 +151,7 @@ contract('ThetaDrop-Marketplace-NFT-Purchases', (accounts) => {
         let nftBuyer     = accounts[0]
         let platformFeeRecipient = accounts[7]
 
-        let {registry, marketplace, dataWarehouse, atomicizer, statici} = await deployCoreContracts()
+        let {registry, marketplace, dataWarehouse, atomicizer, statici, tdropToken} = await deployCoreContracts()
         let [erc721] = await deploy([TestERC721])
 
         await erc721.mint(nftSeller, nftTokenID)
@@ -200,9 +211,14 @@ contract('ThetaDrop-Marketplace-NFT-Purchases', (accounts) => {
         let buyerFinalEthBalance = await web3.eth.getBalance(nftBuyer)
         let sellerFinalEthBalance = await web3.eth.getBalance(nftSeller)
         let platformFeeRecipientFinalEthBalance = await web3.eth.getBalance(platformFeeRecipient)
-        // console.log("buyerFinalEthBalance:                 ", buyerFinalEthBalance)
-        // console.log("sellerFinalEthBalance:                ", sellerFinalEthBalance)
-        // console.log("platformFeeRecipientFinalEthBalance:  ", platformFeeRecipientFinalEthBalance)
+        let buyerTDropBalance = await tdropToken.balanceOf(nftBuyer)
+        let sellerTDropBalance = await tdropToken.balanceOf(nftSeller)
+
+        console.log("buyerFinalEthBalance:                 ", buyerFinalEthBalance)
+        console.log("sellerFinalEthBalance:                ", sellerFinalEthBalance)
+        console.log("platformFeeRecipientFinalEthBalance:  ", platformFeeRecipientFinalEthBalance)
+        console.log("buyerTDropBalance:                    ", buyerTDropBalance.toString())
+        console.log("sellerTDropBalance:                   ", sellerTDropBalance.toString())
 
         split = primaryMarketPlatformFeeSplitBasisPoints / 10000.0
         expectedPlatformFee = Math.floor(buyingPrice * split)

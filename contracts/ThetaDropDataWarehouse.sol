@@ -1,5 +1,7 @@
+pragma abicoder v2;
 pragma solidity 0.7.5;
 
+import "./lib/TradeUtils.sol";
 
 /**
  * @title ThetaDropDataWarehouse
@@ -24,6 +26,9 @@ contract ThetaDropDataWarehouse {
     /// for TNT721, it represents the highest historical transaction value of the NFT token with the specified tokenID
     /// for TNT1155, it represents the highest historical transaction value of a single (i.e. value = 1) NFT token with the specified tokenID
     mapping(address => mapping(uint => uint)) public highestSellingPriceInTFuelWei;
+
+    /// @notice map[NFTAddress][TokenID] => NFTTradeTimestamp
+    mapping(address => mapping(uint => TradeUtils.NFTTradeTimestamp)) public tradeTimestampMap;
 
     /// @notice map[NFTAddress][TokenID] => whether the NFT has been sold in the primary market
     mapping(address => mapping(uint => bool)) public soldInPrimaryMarket;
@@ -97,6 +102,14 @@ contract ThetaDropDataWarehouse {
         uint currHighestPrice = getHighestSellingPriceInTFuelWei(nftAddr, tokenID);
         require(newHigestPrice > currHighestPrice, "the new highest price needs to be strictly higher than the current higest");
         highestSellingPriceInTFuelWei[nftAddr][tokenID] = newHigestPrice;
+    }
+
+    function updateNFTTradeTimestamp(address nftAddr, uint tokenID) onlyMarketplace public {
+        tradeTimestampMap[nftAddr][tokenID] = TradeUtils.NFTTradeTimestamp(block.number, block.timestamp);
+    }
+
+    function getNFTTradeTimestamp(address nftAddr, uint tokenID) public view returns (TradeUtils.NFTTradeTimestamp memory) {
+        return tradeTimestampMap[nftAddr][tokenID];
     }
 
     function isAWhitelistedPaymentToken(address tokenAddr) public view returns (bool) {

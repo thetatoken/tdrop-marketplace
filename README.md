@@ -27,7 +27,7 @@ Next, run the tests with
 MODE=trace truffle test --network=ganache
 
 # run an individual test
-MODE=trace truffle test ./test/3-wyvern-registry.js --network=ganache
+MODE=trace truffle test test/9-theta-drop-marketplace-nft-purchases.js --network=ganache --show-events
 ```
 
 #### Test against the Theta local privatenet

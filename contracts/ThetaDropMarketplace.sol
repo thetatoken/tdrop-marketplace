@@ -2,11 +2,19 @@ pragma abicoder v2;
 pragma solidity 0.7.5;
 
 import "./lib/ArrayUtils.sol";
-import "./exchange/Exchange.sol";
+import "./lib/ExtMath.sol";
+import "./lib/TradeUtils.sol";
+import "./exchange/ExchangeCore.sol";
+
+interface ITDropToken {
+    function mine(address dst, uint rawAmount) external;
+}
 
 interface IDataWarehouse {
     function getHighestSellingPriceInTFuelWei(address nftAddr, uint tokenID) external returns (uint);
     function updateHighestSellingPriceInTFuelWei(address nftAddr, uint tokenID, uint newHigestPrice) external;
+    function getNFTTradeTimestamp(address nftAddr, uint tokenID) external returns (TradeUtils.NFTTradeTimestamp memory);
+    function updateNFTTradeTimestamp(address nftAddr, uint tokenID) external;
     function isAWhitelistedPaymentToken(address tokenAddr) external returns (bool);
     function isAWhitelistedTNT721NFTToken(address tokenAddr) external returns (bool);
     function isAWhitelistedTNT1155NFTToken(address tokenAddr) external returns (bool);
@@ -31,6 +39,14 @@ contract ThetaDropMarketplace is ExchangeCore {
         address paymentTokenAddress; // paymentTokenAddress == 0x0 means paying with TFuel
         uint paymentTokenAmount;
         uint tdropMined;
+    }
+
+    struct LiquidityMiningParameters {
+        uint epsilon;
+        uint alpha;
+        uint gamma;
+        uint omega;
+        uint maxRewardPerTrade;
     }
 
     string public constant name = "Wyvern Exchange";
@@ -60,8 +76,14 @@ contract ThetaDropMarketplace is ExchangeCore {
     /// @notice If NFT liquidity mining only enabled for whitelisted NFTs
     bool public miningOnlyForWhitelistedNFTs;
 
+    /// @notice paramters for the liquidity mining
+    LiquidityMiningParameters public lmp;
+
     /// @notice the address of TDrop data warehouse
     IDataWarehouse public dataWarehouse;
+
+    /// @notice the address of the TDrop token
+    ITDropToken public tdropToken;
 
     /// @notice if the marketplace is paused
     bool public paused;
@@ -80,10 +102,12 @@ contract ThetaDropMarketplace is ExchangeCore {
 
     event NFTTraded(address indexed seller, address indexed buyer, address indexed nftTokenAddress, uint nftTokenID, uint nftAmount, address paymentTokenAddress, uint paymentTokenAmount, uint tdropMined);
 
+    event CalculateTDropMined(uint alpha, uint priceInTFuelWei, uint highestSellingPriceInTFuelWei, uint gamma, uint omega, uint blockHeight, uint lastTradeBlockHeight, uint epsilon, uint maxRewardPerTrade);
+
+    event MinedTDrop(address indexed recipient, uint tdropMined);
+
     constructor (uint chainId, address[] memory registryAddrs, bytes memory customPersonalSignPrefix,
-                 address superAdmin_, address admin_, address payable platformFeeRecipient_,
-                 uint primaryMarketPlatformFeeSplitBasisPoints_,
-                 uint secondaryMarketPlatformFeeSplitBasisPoints_) {
+                 address superAdmin_, address admin_, address payable platformFeeRecipient_, address tdropToken_) {
         DOMAIN_SEPARATOR = hash(EIP712Domain({
             name              : name,
             version           : version,
@@ -103,11 +127,10 @@ contract ThetaDropMarketplace is ExchangeCore {
         emit AdminChanged(address(0), admin);
         platformFeeRecipient = platformFeeRecipient_;
         emit PlatformFeeRecipientChanged(address(0), platformFeeRecipient);
+        tdropToken = ITDropToken(tdropToken_);
         paused = false;
         miningOnlyForWhitelistedNFTs = true;
         liquidityMiningEnabled = false;
-        primaryMarketPlatformFeeSplitBasisPoints = primaryMarketPlatformFeeSplitBasisPoints_;
-        secondaryMarketPlatformFeeSplitBasisPoints = secondaryMarketPlatformFeeSplitBasisPoints_;
     }
 
     function setSuperAdmin(address superAdmin_) onlySuperAdmin external {
@@ -146,6 +169,54 @@ contract ThetaDropMarketplace is ExchangeCore {
 
     function enableLiqudityMiningOnlyForWhitelistedNFTs(bool whitelistedOnly) onlyAdmin external {
         miningOnlyForWhitelistedNFTs = whitelistedOnly;
+    }
+        
+    function getLiquidityMiningParamEpsilon() external view returns (uint) {
+        return lmp.epsilon;
+    }
+
+    function getLiquidityMiningParamAlpha() external view returns (uint) {
+        return lmp.alpha;
+    }
+
+    function getLiquidityMiningParamGamma() external view returns (uint) {
+        return lmp.gamma;
+    }
+
+    function getLiquidityMiningParamOmega() external view returns (uint) {
+        return lmp.omega;
+    }
+
+    function getLiquidityMiningParamMaxRewardPerTrade() external view returns (uint) {
+        return lmp.maxRewardPerTrade;
+    }
+
+    function updateLiquidityMiningParamEpsilon(uint epsilon) onlyAdmin external {
+        lmp.epsilon = epsilon;
+    }
+
+    function updateLiquidityMiningParamAlpha(uint alpha) onlyAdmin external {
+        lmp.alpha = alpha;
+    }
+
+    function updateLiquidityMiningParamGamma(uint gamma) onlyAdmin external {
+        lmp.gamma = gamma;
+    }
+
+    function updateLiquidityMiningParamOmega(uint omega) onlyAdmin external {
+        lmp.omega = omega;
+    }
+
+    function updateLiquidityMiningParamMaxRewardPerTrade(uint maxRewardPerTrade) onlyAdmin external {
+        lmp.maxRewardPerTrade = maxRewardPerTrade;
+    }
+
+    function updateLiquidityMiningParams(uint epsilon, uint alpha, uint gamma, uint omega, uint maxRewardPerTrade) onlyAdmin external {
+        lmp.epsilon = epsilon;
+        lmp.alpha = alpha;
+        lmp.gamma = gamma;
+        lmp.omega = omega;
+        lmp.maxRewardPerTrade = maxRewardPerTrade;
     }
 
     function pause() onlyAdmin external {
@@ -197,6 +268,8 @@ contract ThetaDropMarketplace is ExchangeCore {
             dataWarehouse.markAsSoldInThePrimaryMarket(tm.nftTokenAddress, tm.nftTokenID);
         }
 
+        _updateNFTTradeTimestamp(tm.nftTokenAddress, tm.nftTokenID);
+
         emit NFTTraded(tm.seller, tm.buyer, tm.nftTokenAddress, tm.nftTokenID, tm.nftAmount, tm.paymentTokenAddress, tm.paymentTokenAmount, tm.tdropMined);
     }
 
@@ -229,12 +302,15 @@ contract ThetaDropMarketplace is ExchangeCore {
         return true;
     }
 
+    // Please refer to Section 6 in the TDrop Whitepaper for the details of the NFT Liquidity Mining mechanism
+    // https://s3.us-east-2.amazonaws.com/assets.thetatoken.org/Theta-Ecosystem-2022-and-TDROP-Whitepaper.pdf
     function _performNFTLiquidityMining(NFTTradeMetadata memory tm) internal returns (uint tdropMined) {
         if (!liquidityMiningEnabled) {
             return 0; // do nothing
         }
 
-        if (msg.value == 0) {
+        uint priceInTFuelWei = msg.value;
+        if (priceInTFuelWei == 0) {
             return 0; // only purchasing with TFuel can earn TDrop through NFT Liquidity mining
         }
 
@@ -245,8 +321,40 @@ contract ThetaDropMarketplace is ExchangeCore {
         }
 
         // TODO: Support TNT-1155
+        uint highestSellingPriceInTFuelWei = dataWarehouse.getHighestSellingPriceInTFuelWei(tm.nftTokenAddress, tm.nftTokenID);
+        if (priceInTFuelWei > highestSellingPriceInTFuelWei) {
+            uint lastTradeBlockHeight = dataWarehouse.getNFTTradeTimestamp(tm.nftTokenAddress, tm.nftTokenID).blockHeight;
+            uint blockHeight = block.number;
 
-        return 0;
+            uint normalizedPriceIncrease = SafeMath.div(SafeMath.sub(priceInTFuelWei, highestSellingPriceInTFuelWei), SafeMath.add(lmp.gamma, 1));
+            uint blockGap = SafeMath.sub(blockHeight, lastTradeBlockHeight);
+
+            // NOTE: We know that log2(normalizedPriceIncrease+1) <= 256, and practically blockGap < 10^10. Thus, if omega < 10^8 and alpha < 10^30,
+            //       alpha * log2(normalizedPriceIncrease+1) * omega * blockGap should be at most 2.56 * 10^50 < MAX(uint256) = 1.1579 * 10^77. 
+            //       Hence, the multiplications below should never overflow. On the other hand, if alpha = 10^26, then the max representable
+            //       tdropMined can be as large as 10^26 * 256 * 10^8 * 10^10 / (10^8 * 10^10 + 1000000) = 2.56 * 10^28 > 20 * 10^9 * 10^18 = maxTDropTokenSupplyInWei.
+            //       Therefore, by setting proper parameters alpha and omega, the follow calculation allows us to produce any "tdropMined" value
+            //       within range [0, maxTDropTokenSupplyInWei].
+            tdropMined = SafeMath.mul(lmp.alpha, ExtMath.log2(SafeMath.add(normalizedPriceIncrease, 1)));
+            tdropMined = SafeMath.mul(tdropMined, lmp.omega);
+            tdropMined = SafeMath.mul(tdropMined, blockGap);
+            tdropMined = SafeMath.div(tdropMined, SafeMath.add(SafeMath.mul(lmp.omega, blockGap), 1000000)); // We use constant 1000000 instead of 1 (as in the whitepaper) for better precision control
+            tdropMined = SafeMath.add(tdropMined, lmp.epsilon);
+            if (tdropMined > lmp.maxRewardPerTrade) {
+                tdropMined = lmp.maxRewardPerTrade;
+            }
+
+            dataWarehouse.updateHighestSellingPriceInTFuelWei(tm.nftTokenAddress, tm.nftTokenID, priceInTFuelWei);
+
+            emit CalculateTDropMined(lmp.alpha, priceInTFuelWei, highestSellingPriceInTFuelWei, lmp.gamma, lmp.omega, blockHeight, lastTradeBlockHeight, lmp.epsilon, lmp.maxRewardPerTrade);
+        } else {
+            tdropMined = lmp.epsilon;
+        }
+
+        tdropToken.mine(tm.buyer, tdropMined);
+        emit MinedTDrop(tm.buyer, tdropMined);
+
+        return tdropMined;
     }
 
     function _chargePlatformFee(Order memory firstOrder, Call memory firstCall, Order memory secondOrder, Call memory secondCall)
@@ -316,6 +424,10 @@ contract ThetaDropMarketplace is ExchangeCore {
         secondOrder.staticExtradata = abi.encode(secondTokenAddrPair, secondTokenIDAndPrice);
 
         secondCall.data = abi.encodeWithSignature("transferFrom(address,address,uint256)", buyerAddr, sellerAddr, adjustedPrice);
+    }
+
+    function _updateNFTTradeTimestamp(address nftTokenAddress, uint nftTokenID) internal {
+        dataWarehouse.updateNFTTradeTimestamp(nftTokenAddress, nftTokenID);
     }
 
     function _getPaymentTokenAddress(Call memory call) internal pure returns (address) {
