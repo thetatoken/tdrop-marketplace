@@ -145,11 +145,13 @@ contract ThetaDropMarketplace is ExchangeCore {
     }
 
     function setPrimaryMarketPlatformFeeSplitBasisPoints(uint splitBasisPoints_) onlyAdmin external {
+        require(splitBasisPoints_ <= 10000, "invalid split basis points");
         emit PrimaryMarketPlatformFeeSplitBasisPointsChanged(primaryMarketPlatformFeeSplitBasisPoints, splitBasisPoints_);
         primaryMarketPlatformFeeSplitBasisPoints = splitBasisPoints_;
     }
 
     function setSecondaryMarketPlatformFeeSplitBasisPoints(uint splitBasisPoints_) onlyAdmin external {
+        require(splitBasisPoints_ <= 10000, "invalid split basis points");
         emit SecondaryMarketPlatformFeeSplitBasisPointsChanged(secondaryMarketPlatformFeeSplitBasisPoints, splitBasisPoints_);
         secondaryMarketPlatformFeeSplitBasisPoints = splitBasisPoints_;
     }
@@ -370,6 +372,8 @@ contract ThetaDropMarketplace is ExchangeCore {
         if (platformFeeSplitBasisPoints == 0) {
             return msg.value; // do nonthing
         }
+
+        require(platformFeeSplitBasisPoints <= 10000, "invalid platformFeeSplitBasisPoints");
 
         address tnt20PaymentTokenAddr = _getPaymentTokenAddress(secondCall);
 
