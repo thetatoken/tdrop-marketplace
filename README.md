@@ -27,7 +27,7 @@ Next, run the tests with
 MODE=trace truffle test --network=ganache
 
 # run an individual test
-MODE=trace truffle test test/9-theta-drop-marketplace-nft-purchases.js --network=ganache --show-events
+MODE=trace truffle test test/09-theta-drop-marketplace-nft-purchases.js --network=ganache --show-events
 ```
 
 #### Test against the Theta local privatenet
@@ -43,7 +43,7 @@ Next, in a separate terminal, run the testuite:
 MODE=trace truffle test --network=theta_privatenet
 
 # run an individual test
-MODE=trace truffle test ./test/3-wyvern-registry.js --network=theta_privatenet
+MODE=trace truffle test 09-theta-drop-marketplace-nft-purchases.js --network=theta_privatenet
 ```
 
 ### Linting
