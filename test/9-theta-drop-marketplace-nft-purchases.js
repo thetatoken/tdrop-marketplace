@@ -32,10 +32,11 @@ contract('ThetaDrop-Marketplace-NFT-Purchases', (accounts) => {
         tdropToken = await MockTDropToken.new()
         registry = await WyvernRegistry.new()
         atomicizer = await WyvernAtomicizer.new()
-        marketplace = await ThetaDropMarketplace.new(CHAIN_ID, [registry.address], '0x', superAdmin, admin, platformFeeRecipient, tdropToken.address)
+        marketplace = await ThetaDropMarketplace.new(CHAIN_ID, [registry.address], '0x', superAdmin, admin, platformFeeRecipient)
         dataWarehouse = await ThetaDropDataWarehouse.new(superAdmin, admin)
         statici = await StaticMarket.new()
 
+        await marketplace.setTDropToken(tdropToken.address, {from: admin})
         await marketplace.setPrimaryMarketPlatformFeeSplitBasisPoints(primaryMarketPlatformFeeSplitBasisPoints, {from: admin})
         await marketplace.setSecondaryMarketPlatformFeeSplitBasisPoints(secondaryMarketPlatformFeeSplitBasisPoints, {from: admin})
         await marketplace.setDataWarehouse(dataWarehouse.address, {from: admin})

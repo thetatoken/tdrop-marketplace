@@ -104,7 +104,7 @@ contract ThetaDropMarketplace is ExchangeCore {
     event MinedTDrop(address indexed recipient, uint tdropMined);
 
     constructor (uint chainId, address[] memory registryAddrs, bytes memory customPersonalSignPrefix,
-                 address superAdmin_, address admin_, address payable platformFeeRecipient_, address tdropToken_) {
+                 address superAdmin_, address admin_, address payable platformFeeRecipient_) {
         DOMAIN_SEPARATOR = hash(EIP712Domain({
             name              : name,
             version           : version,
@@ -124,7 +124,6 @@ contract ThetaDropMarketplace is ExchangeCore {
         emit AdminChanged(address(0), admin);
         platformFeeRecipient = platformFeeRecipient_;
         emit PlatformFeeRecipientChanged(address(0), platformFeeRecipient);
-        tdropToken = ITDropToken(tdropToken_);
         paused = false;
         miningOnlyForWhitelistedNFTs = true;
         liquidityMiningEnabled = false;
@@ -158,6 +157,10 @@ contract ThetaDropMarketplace is ExchangeCore {
     function setPlatformFeeRecipient(address payable platformFeeRecipient_) onlyAdmin external {
         emit PlatformFeeRecipientChanged(platformFeeRecipient, platformFeeRecipient_);
         platformFeeRecipient = platformFeeRecipient_;
+    }
+
+    function setTDropToken(address tdropToken_) onlyAdmin external {
+        tdropToken = ITDropToken(tdropToken_);
     }
 
     function enableNFTLiqudityMining(bool enabled) onlyAdmin external {
@@ -299,6 +302,10 @@ contract ThetaDropMarketplace is ExchangeCore {
     function _performNFTLiquidityMining(NFTTradeMetadata memory tm) internal returns (uint tdropMined) {
         if (!liquidityMiningEnabled) {
             return 0; // do nothing
+        }
+
+        if (tdropToken == ITDropToken(address(0))) {
+            return 0;
         }
 
         uint priceInTFuelWei = msg.value;
