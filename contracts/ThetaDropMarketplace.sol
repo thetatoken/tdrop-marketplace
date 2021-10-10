@@ -58,6 +58,9 @@ contract ThetaDropMarketplace is ExchangeCore {
     /// @notice The admin address
     address public admin;
 
+    /// @notice The on-chain governor contract address
+    address public governor;
+
     /// @notice The primary market platform fee split in basis points
     uint public primaryMarketPlatformFeeSplitBasisPoints;
 
@@ -88,6 +91,8 @@ contract ThetaDropMarketplace is ExchangeCore {
     event SuperAdminChanged(address superAdmin, address newSuperAdmin);
 
     event AdminChanged(address admin, address newAdmin);
+
+    event GovernorChanged(address governor, address newGovernor);
 
     event DataWarehouseChanged(address dataWarehouse, address newDataWarehouse);
 
@@ -137,6 +142,11 @@ contract ThetaDropMarketplace is ExchangeCore {
     function setAdmin(address admin_) onlySuperAdmin external {
         emit AdminChanged(admin, admin_);
         admin = admin_;
+    }
+
+    function setGovernor(address governor_) onlyAdmin external {
+        emit GovernorChanged(governor, governor_);
+        governor = governor_;
     }
 
     function setDataWarehouse(address dataWarehouse_) onlyAdmin external {
@@ -193,27 +203,27 @@ contract ThetaDropMarketplace is ExchangeCore {
         return lmp.maxRewardPerTrade;
     }
 
-    function updateLiquidityMiningParamEpsilon(uint epsilon) onlyAdmin external {
+    function updateLiquidityMiningParamEpsilon(uint epsilon) onlyAdminOrGovernor external {
         lmp.epsilon = epsilon;
     }
 
-    function updateLiquidityMiningParamAlpha(uint alpha) onlyAdmin external {
+    function updateLiquidityMiningParamAlpha(uint alpha) onlyAdminOrGovernor external {
         lmp.alpha = alpha;
     }
 
-    function updateLiquidityMiningParamGamma(uint gamma) onlyAdmin external {
+    function updateLiquidityMiningParamGamma(uint gamma) onlyAdminOrGovernor external {
         lmp.gamma = gamma;
     }
 
-    function updateLiquidityMiningParamOmega(uint omega) onlyAdmin external {
+    function updateLiquidityMiningParamOmega(uint omega) onlyAdminOrGovernor external {
         lmp.omega = omega;
     }
 
-    function updateLiquidityMiningParamMaxRewardPerTrade(uint maxRewardPerTrade) onlyAdmin external {
+    function updateLiquidityMiningParamMaxRewardPerTrade(uint maxRewardPerTrade) onlyAdminOrGovernor external {
         lmp.maxRewardPerTrade = maxRewardPerTrade;
     }
 
-    function updateLiquidityMiningParams(uint epsilon, uint alpha, uint gamma, uint omega, uint maxRewardPerTrade) onlyAdmin external {
+    function updateLiquidityMiningParams(uint epsilon, uint alpha, uint gamma, uint omega, uint maxRewardPerTrade) onlyAdminOrGovernor external {
         lmp.epsilon = epsilon;
         lmp.alpha = alpha;
         lmp.gamma = gamma;
@@ -486,6 +496,11 @@ contract ThetaDropMarketplace is ExchangeCore {
 
     modifier onlyAdmin {
         require(msg.sender == admin, "only the admin can perform this action");
+        _; 
+    }
+
+    modifier onlyAdminOrGovernor {
+        require(msg.sender == admin || msg.sender == governor, "only the admin can perform this action");
         _; 
     }
 
