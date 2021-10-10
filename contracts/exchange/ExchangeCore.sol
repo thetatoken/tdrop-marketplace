@@ -68,7 +68,7 @@ contract ExchangeCore is ReentrancyGuarded, StaticCaller, EIP712 {
     /* Variables */
 
     /* Trusted proxy registry contracts. */
-    mapping(address => bool) public registries;
+    // mapping(address => bool) public registries;
 
     /* Order fill status, by maker address then by hash. */
     mapping(address => mapping(bytes32 => uint)) public fills;
@@ -226,30 +226,53 @@ contract ExchangeCore is ReentrancyGuarded, StaticCaller, EIP712 {
         return staticCallUint(order.staticTarget, encodeStaticCall(order, call, counterorder, countercall, matcher, value, fill));
     }
 
-    function executeCall(ProxyRegistryInterface registry, address maker, Call memory call)
+    // function executeCall(ProxyRegistryInterface registry, address maker, Call memory call)
+    //     internal
+    //     returns (bool)
+    // {
+    //     /* Assert valid registry. */
+    //     require(registries[address(registry)]);
+
+    //     /* Assert target exists. */
+    //     require(exists(call.target), "Call target does not exist");
+
+    //     /* Retrieve delegate proxy contract. */
+    //     OwnableDelegateProxy delegateProxy = registry.proxies(maker);
+
+    //     /* Assert existence. */
+    //     require(delegateProxy != OwnableDelegateProxy(0), "Delegate proxy does not exist for maker");
+
+    //     /* Assert implementation. */
+    //     require(delegateProxy.implementation() == registry.delegateProxyImplementation(), "Incorrect delegate proxy implementation for maker");
+
+    //     /* Typecast. */
+    //     AuthenticatedProxy proxy = AuthenticatedProxy(address(delegateProxy));
+
+    //     /* Execute order. */
+    //     return proxy.proxy(call.target, call.howToCall, call.data);
+    // }
+
+    function executeCall(address maker, Call memory call)
         internal
         returns (bool)
     {
-        /* Assert valid registry. */
-        require(registries[address(registry)]);
-
         /* Assert target exists. */
         require(exists(call.target), "Call target does not exist");
 
-        /* Retrieve delegate proxy contract. */
-        OwnableDelegateProxy delegateProxy = registry.proxies(maker);
-
-        /* Assert existence. */
-        require(delegateProxy != OwnableDelegateProxy(0), "Delegate proxy does not exist for maker");
-
-        /* Assert implementation. */
-        require(delegateProxy.implementation() == registry.delegateProxyImplementation(), "Incorrect delegate proxy implementation for maker");
-
-        /* Typecast. */
-        AuthenticatedProxy proxy = AuthenticatedProxy(address(delegateProxy));
-
         /* Execute order. */
-        return proxy.proxy(call.target, call.howToCall, call.data);
+        return proxyCall(call.target, call.howToCall, call.data);
+    }
+
+    function proxyCall(address dest, AuthenticatedProxy.HowToCall howToCall, bytes memory data)
+        internal
+        returns (bool result) {
+        bytes memory ret;
+        if (howToCall == AuthenticatedProxy.HowToCall.Call) {
+            (result, ret) = dest.call(data);
+        } else if (howToCall == AuthenticatedProxy.HowToCall.DelegateCall) {
+            (result, ret) = dest.delegatecall(data);
+        }
+        return result;
     }
 
     function approveOrderHash(bytes32 hash)
@@ -344,11 +367,11 @@ contract ExchangeCore is ReentrancyGuarded, StaticCaller, EIP712 {
 
         /* Execute first call, assert success.
            This is the second "asymmetric" part of order matching: execution of the second order can depend on state changes in the first order, but not vice-versa. */
-        require(executeCall(ProxyRegistryInterface(firstOrder.registry), firstOrder.maker, firstCall), "First call failed");
+        require(executeCall(firstOrder.maker, firstCall), "First call failed");
 
         /* Execute second call, assert success. */
         if (secondCall.target != address(0)) { // to support purchasing with Ether/TFuel, skip the second call if the target is 0x0
-            require(executeCall(ProxyRegistryInterface(secondOrder.registry), secondOrder.maker, secondCall), "Second call failed");
+            require(executeCall(secondOrder.maker, secondCall), "Second call failed");
         }
 
         /* Static calls must happen after the effectful calls so that they can check the resulting state. */

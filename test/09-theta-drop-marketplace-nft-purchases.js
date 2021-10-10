@@ -75,22 +75,22 @@ contract('ThetaDrop-Marketplace-NFT-Purchases', (accounts) => {
         // -------------- Account registration and setup -------------- //
 
         // NFT Seller
-        await registry.registerProxy({from: nftSeller})
-        let sellerProxy = await registry.proxies(nftSeller)
-        assert.equal(true, sellerProxy.length > 0, 'no proxy address for the NFT seller')
-        await erc20.approve(sellerProxy, maxERC20Spending, {from: nftSeller})
+        //await registry.registerProxy({from: nftSeller})
+        //let sellerProxy = await registry.proxies(nftSeller)
+        //assert.equal(true, sellerProxy.length > 0, 'no proxy address for the NFT seller')
+        //await erc20.approve(sellerProxy, maxERC20Spending, {from: nftSeller})
         await erc20.approve(marketplaceAddr, maxERC20Spending, {from: nftSeller}) // FIXME: can we simplify the approval so we just need one transaction?
 
         // NFT Buyer
-        await registry.registerProxy({from: nftBuyer})
-        let buyerProxy = await registry.proxies(nftBuyer)
-        assert.equal(true, buyerProxy.length > 0, 'no proxy address for the NFT buyer')
-        await erc20.approve(buyerProxy, maxERC20Spending, {from: nftBuyer})
+        //await registry.registerProxy({from: nftBuyer})
+        //let buyerProxy = await registry.proxies(nftBuyer)
+        //assert.equal(true, buyerProxy.length > 0, 'no proxy address for the NFT buyer')
+        //await erc20.approve(buyerProxy, maxERC20Spending, {from: nftBuyer})
         await erc20.approve(marketplaceAddr, maxERC20Spending, {from: nftBuyer})  // FIXME: can we simplify the approval so we just need one transaction?
 
         // -------------- The seller puts the NFT on sale -------------- //
 
-        await erc721.setApprovalForAll(sellerProxy, true, {from: nftSeller})
+        await erc721.setApprovalForAll(marketplaceAddr, true, {from: nftSeller})
 
         // -------------- Prepare for the NFT Trade -------------- //
 
@@ -153,25 +153,26 @@ contract('ThetaDrop-Marketplace-NFT-Purchases', (accounts) => {
         let platformFeeRecipient = accounts[7]
 
         let {registry, marketplace, dataWarehouse, atomicizer, statici, tdropToken} = await deployCoreContracts()
+        let marketplaceAddr = marketplace.inst.address
         let [erc721] = await deploy([TestERC721])
 
         await erc721.mint(nftSeller, nftTokenID)
 
         // -------------- Account registration and setup -------------- //
 
-        // NFT Seller
-        await registry.registerProxy({from: nftSeller})
-        let sellerProxy = await registry.proxies(nftSeller)
-        assert.equal(true, sellerProxy.length > 0, 'no proxy address for the NFT seller')
+        // // NFT Seller
+        // await registry.registerProxy({from: nftSeller})
+        // let sellerProxy = await registry.proxies(nftSeller)
+        // assert.equal(true, sellerProxy.length > 0, 'no proxy address for the NFT seller')
 
-        // NFT Buyer
-        await registry.registerProxy({from: nftBuyer})
-        let buyerProxy = await registry.proxies(nftBuyer)
-        assert.equal(true, buyerProxy.length > 0, 'no proxy address for the NFT buyer')
+        // // NFT Buyer
+        // await registry.registerProxy({from: nftBuyer})
+        // let buyerProxy = await registry.proxies(nftBuyer)
+        // assert.equal(true, buyerProxy.length > 0, 'no proxy address for the NFT buyer')
 
         // -------------- The seller puts the NFT on sale -------------- //
 
-        await erc721.setApprovalForAll(sellerProxy, true, {from: nftSeller})
+        await erc721.setApprovalForAll(marketplaceAddr, true, {from: nftSeller})
 
         let buyerInitialEthBalance = await web3.eth.getBalance(nftBuyer)
         let sellerInitialEthBalance = await web3.eth.getBalance(nftSeller)
