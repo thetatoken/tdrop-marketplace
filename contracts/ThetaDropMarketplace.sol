@@ -19,6 +19,71 @@ interface IDataWarehouse {
     function isAWhitelistedTNT1155NFTToken(address tokenAddr) external returns (bool);
 }
 
+//
+// Separate TokenSwapAgent from the ThetaDropMarketplace to simplify the marketplace upgrading process.
+// Without this separation, each time we upgrade ThetaDropMarketplace to a new contract, all the users
+// may need to approve the new ThetaDropMarketplace to access their tokens.
+//
+contract TokenSwapAgent {
+
+    address public superAdmin;
+
+    address public admin;
+
+    address public marketplace;
+
+    constructor(address superAdmin_, address admin_) {
+        superAdmin = superAdmin_;
+        admin = admin_;
+    }
+
+    function setSuperAdmin(address superAdmin_) onlySuperAdmin external {
+        superAdmin = superAdmin_;
+    }
+
+    function setAdmin(address admin_) onlySuperAdmin external {
+        admin = admin_;
+    }
+
+    function setMarketplace(address marketplace_) onlyAdmin external {
+        marketplace = marketplace_;
+    }
+
+    function transferFee(address tnt20PaymentTokenAddr, address buyerAddr, address platformFeeRecipient, uint platformFeeInTNT20) 
+        onlyMarketplace external returns (bool result)  {
+        ERC20 paymentToken = ERC20(tnt20PaymentTokenAddr);
+        require(paymentToken.transferFrom(buyerAddr, platformFeeRecipient, platformFeeInTNT20), "TNT20 fee transfer failed");
+        return true;
+    }
+
+    function proxyCall(address dest, AuthenticatedProxy.HowToCall howToCall, bytes memory data)
+        onlyMarketplace external returns (bool result) {
+        bytes memory ret;
+        if (howToCall == AuthenticatedProxy.HowToCall.Call) {
+            (result, ret) = dest.call(data);
+        } else if (howToCall == AuthenticatedProxy.HowToCall.DelegateCall) {
+            (result, ret) = dest.delegatecall(data);
+        }
+        return result;
+    }
+
+    modifier onlySuperAdmin {
+        require(msg.sender == superAdmin, "only the super admin can perform this action");
+        _;
+    }
+
+    modifier onlyAdmin {
+        require(msg.sender == admin, "only the admin can perform this action");
+        _;
+    }
+
+    modifier onlyMarketplace {
+        require(msg.sender == marketplace, "only the marketplace can perform this action");
+        _;
+    }
+}
+
+
 /**
  * @title ThetaDropMarketplace
  * @author ThetaDrop Marketplace Protocol Developers
@@ -61,6 +126,9 @@ contract ThetaDropMarketplace is ExchangeCore {
     /// @notice The on-chain governor contract address
     address public governor;
 
+    /// @notice The on-chain governor contract address
+    TokenSwapAgent public tokenSwapAgent;
+
     /// @notice The primary market platform fee split in basis points
     uint public primaryMarketPlatformFeeSplitBasisPoints;
 
@@ -94,6 +162,8 @@ contract ThetaDropMarketplace is ExchangeCore {
 
     event GovernorChanged(address governor, address newGovernor);
 
+    event TokenSwapAgentChanged(address tokenSwapAgent, address newTokeSwapAgent);
+
     event DataWarehouseChanged(address dataWarehouse, address newDataWarehouse);
 
     event PrimaryMarketPlatformFeeSplitBasisPointsChanged(uint splitBasisPoints, uint newSplitBasisPoints);
@@ -108,7 +178,7 @@ contract ThetaDropMarketplace is ExchangeCore {
 
     event MinedTDrop(address indexed recipient, uint tdropMined);
 
-    constructor (uint chainId, address[] memory registryAddrs, bytes memory customPersonalSignPrefix,
+    constructor (uint chainId, bytes memory customPersonalSignPrefix,
                  address superAdmin_, address admin_, address payable platformFeeRecipient_) {
         DOMAIN_SEPARATOR = hash(EIP712Domain({
             name              : name,
@@ -147,6 +217,11 @@ contract ThetaDropMarketplace is ExchangeCore {
     function setGovernor(address governor_) onlyAdmin external {
         emit GovernorChanged(governor, governor_);
         governor = governor_;
+    }
+
+    function setTokenSwapAgent(address tokenSwapAgent_) onlyAdmin external {
+        emit TokenSwapAgentChanged(address(tokenSwapAgent), tokenSwapAgent_);
+        tokenSwapAgent = TokenSwapAgent(tokenSwapAgent_);
     }
 
     function setDataWarehouse(address dataWarehouse_) onlyAdmin external {
@@ -379,13 +454,7 @@ contract ThetaDropMarketplace is ExchangeCore {
 
     function _proxyCall(address dest, AuthenticatedProxy.HowToCall howToCall, bytes memory data)
         internal returns (bool result) {
-        bytes memory ret;
-        if (howToCall == AuthenticatedProxy.HowToCall.Call) {
-            (result, ret) = dest.call(data);
-        } else if (howToCall == AuthenticatedProxy.HowToCall.DelegateCall) {
-            (result, ret) = dest.delegatecall(data);
-        }
-        return result;
+        return tokenSwapAgent.proxyCall(dest, howToCall, data);
     }
 
     function _chargePlatformFee(Order memory firstOrder, Call memory firstCall, Order memory secondOrder, Call memory secondCall)
@@ -432,8 +501,10 @@ contract ThetaDropMarketplace is ExchangeCore {
             address buyerAddr = secondOrder.maker;
             address sellerAddr = firstOrder.maker;
             uint platformFeeInTNT20 = SafeMath.div(SafeMath.mul(price, platformFeeSplitBasisPoints), 10000);
-            ERC20 paymentToken = ERC20(tnt20PaymentTokenAddr);
-            require(paymentToken.transferFrom(buyerAddr, platformFeeRecipient, platformFeeInTNT20), "TNT20 payment token transfer failed");
+            // ERC20 paymentToken = ERC20(tnt20PaymentTokenAddr);
+            // require(paymentToken.transferFrom(buyerAddr, platformFeeRecipient, platformFeeInTNT20), "TNT20 payment token transfer failed");
+            bool chargeSuccessful = tokenSwapAgent.transferFee(tnt20PaymentTokenAddr, buyerAddr, platformFeeRecipient, platformFeeInTNT20);
+            require(chargeSuccessful, "TNT20 payment token transfer failed");
 
             // adjust the orders and calls since the amount of payment token to be sent to the seller has been deducted
             _adjustOrdersAndCalls(firstOrder, firstCall, secondOrder, secondCall, buyerAddr, sellerAddr, price, platformFeeInTNT20);

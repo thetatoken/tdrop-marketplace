@@ -1,4 +1,5 @@
 const WyvernAtomicizer = artifacts.require('WyvernAtomicizer')
+const TokenSwapAgent = artifacts.require('TokenSwapAgent')
 const ThetaDropMarketplace = artifacts.require('ThetaDropMarketplace')
 const ThetaDropDataWarehouse = artifacts.require('ThetaDropDataWarehouse')
 const StaticMarket = artifacts.require('StaticMarket')
@@ -32,22 +33,25 @@ contract('ThetaDrop-Marketplace-NFT-Purchases', (accounts) => {
         tdropToken = await MockTDropToken.new()
         registry = await WyvernRegistry.new()
         atomicizer = await WyvernAtomicizer.new()
-        marketplace = await ThetaDropMarketplace.new(CHAIN_ID, [registry.address], '0x', superAdmin, admin, platformFeeRecipient)
+        marketplace = await ThetaDropMarketplace.new(CHAIN_ID, '0x', superAdmin, admin, platformFeeRecipient)
+        tokenSwapAgent = await TokenSwapAgent.new(superAdmin, admin)
         dataWarehouse = await ThetaDropDataWarehouse.new(superAdmin, admin)
         statici = await StaticMarket.new()
 
         await marketplace.setTDropToken(tdropToken.address, {from: admin})
         await marketplace.setPrimaryMarketPlatformFeeSplitBasisPoints(primaryMarketPlatformFeeSplitBasisPoints, {from: admin})
         await marketplace.setSecondaryMarketPlatformFeeSplitBasisPoints(secondaryMarketPlatformFeeSplitBasisPoints, {from: admin})
+        await marketplace.setTokenSwapAgent(tokenSwapAgent.address, {from: admin})
         await marketplace.setDataWarehouse(dataWarehouse.address, {from: admin})
         await marketplace.enableNFTLiqudityMining(true, {from: admin})
         await marketplace.updateLiquidityMiningParams(epsilon, alpha, gamma, omega, maxRewardPerTrade, {from: admin})
         await marketplace.enableLiqudityMiningOnlyForWhitelistedNFTs(false, {from: admin})
 
+        await tokenSwapAgent.setMarketplace(marketplace.address, {from: admin})
         await dataWarehouse.setMarketplace(marketplace.address, {from: admin})
         await registry.grantInitialAuthentication(marketplace.address)
 
-        return {registry, marketplace:wrap(marketplace), dataWarehouse, atomicizer, statici, tdropToken}
+        return {registry, marketplace:wrap(marketplace), tokenSwapAgent, dataWarehouse, atomicizer, statici, tdropToken}
     }
 
     let deploy = async contracts => Promise.all(contracts.map(contract => contract.new()))
@@ -63,8 +67,8 @@ contract('ThetaDrop-Marketplace-NFT-Purchases', (accounts) => {
         let admin            = accounts[8]
         let platformFeeRecipient = accounts[7]
 
-        let {registry, marketplace, dataWarehouse, atomicizer, statici, tdropToken} = await deployCoreContracts()
-        let marketplaceAddr = marketplace.inst.address
+        let {registry, marketplace, tokenSwapAgent, dataWarehouse, atomicizer, statici, tdropToken} = await deployCoreContracts()
+        let tokenSwapAgentAddr = tokenSwapAgent.address
         let [erc721] = await deploy([TestERC721])
         let [erc20] = await deploy([TestERC20])
         await dataWarehouse.whitelistPaymentToken(erc20.address, true, {from: admin})
@@ -79,18 +83,18 @@ contract('ThetaDrop-Marketplace-NFT-Purchases', (accounts) => {
         //let sellerProxy = await registry.proxies(nftSeller)
         //assert.equal(true, sellerProxy.length > 0, 'no proxy address for the NFT seller')
         //await erc20.approve(sellerProxy, maxERC20Spending, {from: nftSeller})
-        await erc20.approve(marketplaceAddr, maxERC20Spending, {from: nftSeller}) // FIXME: can we simplify the approval so we just need one transaction?
+        await erc20.approve(tokenSwapAgentAddr, maxERC20Spending, {from: nftSeller}) // FIXME: can we simplify the approval so we just need one transaction?
 
         // NFT Buyer
         //await registry.registerProxy({from: nftBuyer})
         //let buyerProxy = await registry.proxies(nftBuyer)
         //assert.equal(true, buyerProxy.length > 0, 'no proxy address for the NFT buyer')
         //await erc20.approve(buyerProxy, maxERC20Spending, {from: nftBuyer})
-        await erc20.approve(marketplaceAddr, maxERC20Spending, {from: nftBuyer})  // FIXME: can we simplify the approval so we just need one transaction?
+        await erc20.approve(tokenSwapAgentAddr, maxERC20Spending, {from: nftBuyer})  // FIXME: can we simplify the approval so we just need one transaction?
 
         // -------------- The seller puts the NFT on sale -------------- //
 
-        await erc721.setApprovalForAll(marketplaceAddr, true, {from: nftSeller})
+        await erc721.setApprovalForAll(tokenSwapAgentAddr, true, {from: nftSeller})
 
         // -------------- Prepare for the NFT Trade -------------- //
 
@@ -98,6 +102,7 @@ contract('ThetaDrop-Marketplace-NFT-Purchases', (accounts) => {
         const erc20c = new web3.eth.Contract(erc20.abi, erc20.address)
 
         // NFT Seller
+        // Important note: should use different salt strings for different trades
         const selectorOne = web3.eth.abi.encodeFunctionSignature('ERC721ForERC20(bytes,address[7],uint8[2],uint256[6],bytes,bytes)')
         const paramsOne = web3.eth.abi.encodeParameters(['address[2]', 'uint256[2]'], [[erc721.address, erc20.address], [nftTokenID, sellingPrice]]) 
         const one = {registry: registry.address, maker: nftSeller, staticTarget: statici.address, staticSelector: selectorOne, staticExtradata: paramsOne, maximumFill: 1, listingTime: '0', expirationTime: '10000000000', salt: '11'}
@@ -106,6 +111,7 @@ contract('ThetaDrop-Marketplace-NFT-Purchases', (accounts) => {
         let sigOne = await marketplace.sign(one, nftSeller) // in the actual implementation, this should be signed by the seller
         
         // NFT Buyer
+        // Important note: should use different salt strings for different trades
         const selectorTwo = web3.eth.abi.encodeFunctionSignature('ERC20ForERC721(bytes,address[7],uint8[2],uint256[6],bytes,bytes)')
         const paramsTwo = web3.eth.abi.encodeParameters(['address[2]', 'uint256[2]'], [[erc20.address, erc721.address], [nftTokenID, buyingPrice]])
         const two = {registry: registry.address, maker: nftBuyer, staticTarget: statici.address, staticSelector: selectorTwo, staticExtradata: paramsTwo, maximumFill: 1, listingTime: '0', expirationTime: '10000000000', salt: '12'}
@@ -152,8 +158,8 @@ contract('ThetaDrop-Marketplace-NFT-Purchases', (accounts) => {
         let nftBuyer     = accounts[0]
         let platformFeeRecipient = accounts[7]
 
-        let {registry, marketplace, dataWarehouse, atomicizer, statici, tdropToken} = await deployCoreContracts()
-        let marketplaceAddr = marketplace.inst.address
+        let {registry, marketplace, tokenSwapAgent, dataWarehouse, atomicizer, statici, tdropToken} = await deployCoreContracts()
+        let tokenSwapAgentAddr = tokenSwapAgent.address
         let [erc721] = await deploy([TestERC721])
 
         await erc721.mint(nftSeller, nftTokenID)
@@ -172,7 +178,7 @@ contract('ThetaDrop-Marketplace-NFT-Purchases', (accounts) => {
 
         // -------------- The seller puts the NFT on sale -------------- //
 
-        await erc721.setApprovalForAll(marketplaceAddr, true, {from: nftSeller})
+        await erc721.setApprovalForAll(tokenSwapAgentAddr, true, {from: nftSeller})
 
         let buyerInitialEthBalance = await web3.eth.getBalance(nftBuyer)
         let sellerInitialEthBalance = await web3.eth.getBalance(nftSeller)
@@ -186,6 +192,7 @@ contract('ThetaDrop-Marketplace-NFT-Purchases', (accounts) => {
         const erc721c = new web3.eth.Contract(erc721.abi, erc721.address)
 
         // NFT Seller
+        // Important note: should use different salt strings for different trades
         const selectorOne = web3.eth.abi.encodeFunctionSignature('ERC721ForETH(bytes,address[7],uint8[2],uint256[6],bytes,bytes)')
         const paramsOne = web3.eth.abi.encodeParameters(['address[2]', 'uint256[2]'], [[erc721.address, "0x0000000000000000000000000000000000000000"], [nftTokenID, sellingPrice]]) 
         const one = {registry: registry.address, maker: nftSeller, staticTarget: statici.address, staticSelector: selectorOne, staticExtradata: paramsOne, maximumFill: 1, listingTime: '0', expirationTime: '10000000000', salt: '11'}
@@ -194,6 +201,7 @@ contract('ThetaDrop-Marketplace-NFT-Purchases', (accounts) => {
         let sigOne = await marketplace.sign(one, nftSeller) // in an actual implementation, this should be signed by the seller
 
         // NFT Buyer, target: "0x0000000000000000000000000000000000000000" indicates buying with TFuel
+        // Important note: should use different salt strings for different trades        
         const selectorTwo = web3.eth.abi.encodeFunctionSignature('ETHForERC721(bytes,address[7],uint8[2],uint256[6],bytes,bytes)')
         const paramsTwo = web3.eth.abi.encodeParameters(['address[2]', 'uint256[2]'], [["0x0000000000000000000000000000000000000000", erc721.address], [nftTokenID, buyingPrice]])
         const two = {registry: registry.address, maker: nftBuyer, staticTarget: statici.address, staticSelector: selectorTwo, staticExtradata: paramsTwo, maximumFill: 1, listingTime: '0', expirationTime: '10000000000', salt: '12'}
