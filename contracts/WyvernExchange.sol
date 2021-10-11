@@ -27,9 +27,9 @@ contract WyvernExchange is Exchange {
             chainId           : chainId,
             verifyingContract : address(this)
         }));
-        // for (uint ind = 0; ind < registryAddrs.length; ind++) {
-        //   registries[registryAddrs[ind]] = true;
-        // }
+        for (uint ind = 0; ind < registryAddrs.length; ind++) {
+          registries[registryAddrs[ind]] = true;
+        }
         if (customPersonalSignPrefix.length > 0) {
           personalSignPrefix = customPersonalSignPrefix;
         }

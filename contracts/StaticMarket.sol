@@ -111,6 +111,11 @@ contract StaticMarket {
 		return new_fill;
 	}
 
+    // address[7] memory addresses = [order.registry, order.maker, call.target, counterorder.registry, counterorder.maker, countercall.target, matcher];
+    // AuthenticatedProxy.HowToCall[2] memory howToCalls = [call.howToCall, countercall.howToCall];
+    // uint[6] memory uints = [value, order.maximumFill, order.listingTime, order.expirationTime, counterorder.listingTime, fill];
+    // return abi.encodeWithSelector(order.staticSelector, order.staticExtradata, addresses, howToCalls, uints, call.data, countercall.data);
+    
 	function ERC721ForETH(bytes memory extra,
 		address[7] memory addresses, AuthenticatedProxy.HowToCall[2] memory howToCalls, uint[6] memory uints,
 		bytes memory data, bytes memory counterdata)
@@ -127,6 +132,7 @@ contract StaticMarket {
 		uint price = tokenIdAndPrice[1];
 		require(price > 0, "ERC721ForETH: ERC721 price must be larger than zero");
 		require(msgValue == price, "ERC721ForETH: ERC721 price must be equal to msgValue");
+		require(tokenGiveGet[1] == address(0), "ERC721ForETH: payment needs to be in ETH");
 		require(addresses[2] == tokenGiveGet[0], "ERC721ForETH: call target must equal address of token to give");
 		require(addresses[5] == tokenGiveGet[1], "ERC721ForETH: countercall target must equal address of token to get");
 
@@ -151,6 +157,7 @@ contract StaticMarket {
 		uint price = tokenIdAndPrice[1];
 		require(price > 0, "ETHForERC721: ERC721 price must be larger than zero");
 		require(msgValue == price, "ETHForERC721: ERC721 price must be equal to msgValue");
+		require(tokenGiveGet[0] == address(0), "ETHForERC721: payment needs to be in ETH");
 		require(addresses[2] == tokenGiveGet[0], "ETHForERC721: call target must equal address of token to give");
 		require(addresses[5] == tokenGiveGet[1], "ETHForERC721: countercall target must equal address of token to get");
 

@@ -368,6 +368,26 @@ contract ThetaDropMarketplace is ExchangeCore {
         return tdropMined;
     }
 
+    function executeCall(ProxyRegistryInterface registry, address maker, Call memory call)
+        internal override returns (bool) {
+        /* Assert target exists. */
+        require(exists(call.target), "Call target does not exist");
+
+        /* Execute order. */
+        return _proxyCall(call.target, call.howToCall, call.data);
+    }
+
+    function _proxyCall(address dest, AuthenticatedProxy.HowToCall howToCall, bytes memory data)
+        internal returns (bool result) {
+        bytes memory ret;
+        if (howToCall == AuthenticatedProxy.HowToCall.Call) {
+            (result, ret) = dest.call(data);
+        } else if (howToCall == AuthenticatedProxy.HowToCall.DelegateCall) {
+            (result, ret) = dest.delegatecall(data);
+        }
+        return result;
+    }
+
     function _chargePlatformFee(Order memory firstOrder, Call memory firstCall, Order memory secondOrder, Call memory secondCall)
         internal virtual override returns (uint sellerValue) {
         address nftTokenAddress   = _getNFTTokenAddress(firstCall);
