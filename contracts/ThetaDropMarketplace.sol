@@ -449,12 +449,7 @@ contract ThetaDropMarketplace is ExchangeCore {
         require(exists(call.target), "Call target does not exist");
 
         /* Execute order. */
-        return _proxyCall(call.target, call.howToCall, call.data);
-    }
-
-    function _proxyCall(address dest, AuthenticatedProxy.HowToCall howToCall, bytes memory data)
-        internal returns (bool result) {
-        return tokenSwapAgent.proxyCall(dest, howToCall, data);
+        return tokenSwapAgent.proxyCall(call.target, call.howToCall, call.data);
     }
 
     function _chargePlatformFee(Order memory firstOrder, Call memory firstCall, Order memory secondOrder, Call memory secondCall)
@@ -469,7 +464,7 @@ contract ThetaDropMarketplace is ExchangeCore {
         }
 
         if (platformFeeSplitBasisPoints == 0) {
-            return msg.value; // do nonthing
+            return msg.value; // do nothing
         }
 
         require(platformFeeSplitBasisPoints <= 10000, "invalid platformFeeSplitBasisPoints");

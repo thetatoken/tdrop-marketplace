@@ -79,18 +79,10 @@ contract('ThetaDrop-Marketplace-NFT-Purchases', (accounts) => {
         // -------------- Account registration and setup -------------- //
 
         // NFT Seller
-        //await registry.registerProxy({from: nftSeller})
-        //let sellerProxy = await registry.proxies(nftSeller)
-        //assert.equal(true, sellerProxy.length > 0, 'no proxy address for the NFT seller')
-        //await erc20.approve(sellerProxy, maxERC20Spending, {from: nftSeller})
-        await erc20.approve(tokenSwapAgentAddr, maxERC20Spending, {from: nftSeller}) // FIXME: can we simplify the approval so we just need one transaction?
+        await erc20.approve(tokenSwapAgentAddr, maxERC20Spending, {from: nftSeller})
 
         // NFT Buyer
-        //await registry.registerProxy({from: nftBuyer})
-        //let buyerProxy = await registry.proxies(nftBuyer)
-        //assert.equal(true, buyerProxy.length > 0, 'no proxy address for the NFT buyer')
-        //await erc20.approve(buyerProxy, maxERC20Spending, {from: nftBuyer})
-        await erc20.approve(tokenSwapAgentAddr, maxERC20Spending, {from: nftBuyer})  // FIXME: can we simplify the approval so we just need one transaction?
+        await erc20.approve(tokenSwapAgentAddr, maxERC20Spending, {from: nftBuyer})
 
         // -------------- The seller puts the NFT on sale -------------- //
 
@@ -165,16 +157,6 @@ contract('ThetaDrop-Marketplace-NFT-Purchases', (accounts) => {
         await erc721.mint(nftSeller, nftTokenID)
 
         // -------------- Account registration and setup -------------- //
-
-        // // NFT Seller
-        // await registry.registerProxy({from: nftSeller})
-        // let sellerProxy = await registry.proxies(nftSeller)
-        // assert.equal(true, sellerProxy.length > 0, 'no proxy address for the NFT seller')
-
-        // // NFT Buyer
-        // await registry.registerProxy({from: nftBuyer})
-        // let buyerProxy = await registry.proxies(nftBuyer)
-        // assert.equal(true, buyerProxy.length > 0, 'no proxy address for the NFT buyer')
 
         // -------------- The seller puts the NFT on sale -------------- //
 
