@@ -185,7 +185,7 @@ contract('ThetaDrop-Marketplace-NFT-Purchases-Edge-Cases', (accounts) => {
         selectorOne = web3.eth.abi.encodeFunctionSignature('ERC721ForERC20(bytes,address[7],uint8[2],uint256[6],bytes,bytes)')
         paramsOne = web3.eth.abi.encodeParameters(['address[2]', 'uint256[2]'], [[erc721fake.address, erc20.address], [nftTokenID, sellingPrice]]) 
         one = {registry: registry.address, maker: nftSeller, staticTarget: statici.address, staticSelector: selectorOne, staticExtradata: paramsOne, maximumFill: 1, listingTime: '0', expirationTime: '10000000000', salt: '11'}
-        firstData = erc721c.methods.transferFrom(nftSeller, nftBuyer, nftTokenID).encodeABI()
+        firstData = erc721fakec.methods.transferFrom(nftSeller, nftBuyer, nftTokenID).encodeABI()
         firstCall = {target: erc721fake.address, howToCall: 0, data: firstData}
         sigOne = await marketplace.sign(one, nftSeller) // in the actual implementation, this should be signed by the seller
         
@@ -253,7 +253,6 @@ contract('ThetaDrop-Marketplace-NFT-Purchases-Edge-Cases', (accounts) => {
         await marketplace.tradeNFT(one, sigOne, firstCall, two, sigTwo, secondCall, ZERO_BYTES32, {from: anyAccount}) // anyone can trigger the trade
 
         // Verify the NFT Trade
-
         let nftBuyerERC20Balance = await erc20.balanceOf(nftBuyer)
         let nftSellerERC20Balance = await erc20.balanceOf(nftSeller)
         let platformFeeRecipientERC20Balance = await erc20.balanceOf(platformFeeRecipient)
@@ -281,6 +280,7 @@ contract('ThetaDrop-Marketplace-NFT-Purchases-Edge-Cases', (accounts) => {
 
         let {registry, marketplace, dataWarehouse, atomicizer, statici, tdropToken} = await deployCoreContracts()
         let [erc721] = await deploy([TestERC721])
+        let [erc721fake] = await deploy([TestERC721])
 
         await erc721.mint(nftSeller, nftTokenID)
 
@@ -303,36 +303,162 @@ contract('ThetaDrop-Marketplace-NFT-Purchases-Edge-Cases', (accounts) => {
         let buyerInitialEthBalance = await web3.eth.getBalance(nftBuyer)
         let sellerInitialEthBalance = await web3.eth.getBalance(nftSeller)
         let platformFeeRecipientInitialEthBalance = await web3.eth.getBalance(platformFeeRecipient)
-        // console.log("buyerInitialEthBalance               :", buyerInitialEthBalance)
-        // console.log("sellerInitialEthBalance              :", sellerInitialEthBalance)
-        // console.log("platformFeeRecipientInitialEthBalance:", platformFeeRecipientInitialEthBalance)
-
-        // -------------- Prepare for the NFT Trade -------------- //
-
         const erc721c = new web3.eth.Contract(erc721.abi, erc721.address)
+        const erc721fakec = new web3.eth.Contract(erc721.abi, erc721fake.address)
+
+        //
+        // Test 1. Seller failed to provide a correct signature
+        //
 
         // NFT Seller
-        const selectorOne = web3.eth.abi.encodeFunctionSignature('ERC721ForETH(bytes,address[7],uint8[2],uint256[6],bytes,bytes)')
-        const paramsOne = web3.eth.abi.encodeParameters(['address[2]', 'uint256[2]'], [[erc721.address, "0x0000000000000000000000000000000000000000"], [nftTokenID, sellingPrice]]) 
-        const one = {registry: registry.address, maker: nftSeller, staticTarget: statici.address, staticSelector: selectorOne, staticExtradata: paramsOne, maximumFill: 1, listingTime: '0', expirationTime: '10000000000', salt: '11'}
-        const firstData = erc721c.methods.transferFrom(nftSeller, nftBuyer, nftTokenID).encodeABI()
-        const firstCall = {target: erc721.address, howToCall: 0, data: firstData}
-        let sigOne = await marketplace.sign(one, nftSeller) // in an actual implementation, this should be signed by the seller
+        selectorOne = web3.eth.abi.encodeFunctionSignature('ERC721ForETH(bytes,address[7],uint8[2],uint256[6],bytes,bytes)')
+        paramsOne = web3.eth.abi.encodeParameters(['address[2]', 'uint256[2]'], [[erc721.address, "0x0000000000000000000000000000000000000000"], [nftTokenID, sellingPrice]]) 
+        one = {registry: registry.address, maker: nftSeller, staticTarget: statici.address, staticSelector: selectorOne, staticExtradata: paramsOne, maximumFill: 1, listingTime: '0', expirationTime: '10000000000', salt: '11'}
+        firstData = erc721c.methods.transferFrom(nftSeller, nftBuyer, nftTokenID).encodeABI()
+        firstCall = {target: erc721.address, howToCall: 0, data: firstData}
+        sigOne = NULL_SIG
 
         // NFT Buyer, target: "0x0000000000000000000000000000000000000000" indicates buying with TFuel
-        const selectorTwo = web3.eth.abi.encodeFunctionSignature('ETHForERC721(bytes,address[7],uint8[2],uint256[6],bytes,bytes)')
-        const paramsTwo = web3.eth.abi.encodeParameters(['address[2]', 'uint256[2]'], [["0x0000000000000000000000000000000000000000", erc721.address], [nftTokenID, buyingPrice]])
-        const two = {registry: registry.address, maker: nftBuyer, staticTarget: statici.address, staticSelector: selectorTwo, staticExtradata: paramsTwo, maximumFill: 1, listingTime: '0', expirationTime: '10000000000', salt: '12'}
-        const secondCall = {target: "0x0000000000000000000000000000000000000000", howToCall: 0, data: "0x"}
-        let sigTwo = await marketplace.sign(two, nftBuyer) // in an actual implementation, this should be signed by the buyer
+        selectorTwo = web3.eth.abi.encodeFunctionSignature('ETHForERC721(bytes,address[7],uint8[2],uint256[6],bytes,bytes)')
+        paramsTwo = web3.eth.abi.encodeParameters(['address[2]', 'uint256[2]'], [["0x0000000000000000000000000000000000000000", erc721.address], [nftTokenID, buyingPrice]])
+        two = {registry: registry.address, maker: nftBuyer, staticTarget: statici.address, staticSelector: selectorTwo, staticExtradata: paramsTwo, maximumFill: 1, listingTime: '0', expirationTime: '10000000000', salt: '12'}
+        secondCall = {target: "0x0000000000000000000000000000000000000000", howToCall: 0, data: "0x"}
+        sigTwo = await marketplace.sign(two, nftBuyer) // in an actual implementation, this should be signed by the buyer
 
-        // -------------- Execute the NFT Trade -------------- //
+        // Trade NFT. tradeNFT needs to be called by the nftBuyer since the buyer needs to pay the TFuel
+        assertIsRejected(
+			marketplace.tradeNFT(one, sigOne, firstCall, two, sigTwo, secondCall, ZERO_BYTES32, {from: nftBuyer, value: sellingPrice}),
+			/First order failed authorization/,
+			'VM Exception while processing transaction: revert First order failed authorization.'
+		)
 
-        // tradeNFT needs to be called by the nftBuyer since the buyer needs to pay the TFuel
+        //
+        // Test 2. Buyer failed to provide a correct signature
+        //
+
+        // NFT Seller
+        selectorOne = web3.eth.abi.encodeFunctionSignature('ERC721ForETH(bytes,address[7],uint8[2],uint256[6],bytes,bytes)')
+        paramsOne = web3.eth.abi.encodeParameters(['address[2]', 'uint256[2]'], [[erc721.address, "0x0000000000000000000000000000000000000000"], [nftTokenID, sellingPrice]]) 
+        one = {registry: registry.address, maker: nftSeller, staticTarget: statici.address, staticSelector: selectorOne, staticExtradata: paramsOne, maximumFill: 1, listingTime: '0', expirationTime: '10000000000', salt: '11'}
+        firstData = erc721c.methods.transferFrom(nftSeller, nftBuyer, nftTokenID).encodeABI()
+        firstCall = {target: erc721.address, howToCall: 0, data: firstData}
+        sigOne = await marketplace.sign(one, nftSeller) // in an actual implementation, this should be signed by the seller
+
+        // NFT Buyer, target: "0x0000000000000000000000000000000000000000" indicates buying with TFuel
+        selectorTwo = web3.eth.abi.encodeFunctionSignature('ETHForERC721(bytes,address[7],uint8[2],uint256[6],bytes,bytes)')
+        paramsTwo = web3.eth.abi.encodeParameters(['address[2]', 'uint256[2]'], [["0x0000000000000000000000000000000000000000", erc721.address], [nftTokenID, buyingPrice]])
+        two = {registry: registry.address, maker: nftBuyer, staticTarget: statici.address, staticSelector: selectorTwo, staticExtradata: paramsTwo, maximumFill: 1, listingTime: '0', expirationTime: '10000000000', salt: '12'}
+        secondCall = {target: "0x0000000000000000000000000000000000000000", howToCall: 0, data: "0x"}
+        sigTwo = NULL_SIG
+
+        anyAccount = accounts[3] // send from anyAccount just to force the marketplace to verify the signature of the buyer                
+        assertIsRejected(
+			marketplace.tradeNFT(one, sigOne, firstCall, two, sigTwo, secondCall, ZERO_BYTES32, {from: anyAccount, value: sellingPrice}),
+			/Second order failed authorization/,
+			'VM Exception while processing transaction: revert Second order failed authorization.'
+		)
+
+        //
+        // Test 3. Buyer specifes an incorrect sanity check functions (ERC20ForERC721) for purchasing with TFuel. The static call should fail.
+        //
+
+        // NFT Seller
+        selectorOne = web3.eth.abi.encodeFunctionSignature('ERC721ForETH(bytes,address[7],uint8[2],uint256[6],bytes,bytes)')
+        paramsOne = web3.eth.abi.encodeParameters(['address[2]', 'uint256[2]'], [[erc721.address, "0x0000000000000000000000000000000000000000"], [nftTokenID, sellingPrice]]) 
+        one = {registry: registry.address, maker: nftSeller, staticTarget: statici.address, staticSelector: selectorOne, staticExtradata: paramsOne, maximumFill: 1, listingTime: '0', expirationTime: '10000000000', salt: '11'}
+        firstData = erc721c.methods.transferFrom(nftSeller, nftBuyer, nftTokenID).encodeABI()
+        firstCall = {target: erc721.address, howToCall: 0, data: firstData}
+        sigOne = await marketplace.sign(one, nftSeller) // in an actual implementation, this should be signed by the seller
+
+        // NFT Buyer, target: "0x0000000000000000000000000000000000000000" indicates buying with TFuel
+        selectorTwo = web3.eth.abi.encodeFunctionSignature('ERC20ForERC721(bytes,address[7],uint8[2],uint256[6],bytes,bytes)')
+        paramsTwo = web3.eth.abi.encodeParameters(['address[2]', 'uint256[2]'], [["0x0000000000000000000000000000000000000000", erc721.address], [nftTokenID, buyingPrice]])
+        two = {registry: registry.address, maker: nftBuyer, staticTarget: statici.address, staticSelector: selectorTwo, staticExtradata: paramsTwo, maximumFill: 1, listingTime: '0', expirationTime: '10000000000', salt: '12'}
+        secondCall = {target: "0x0000000000000000000000000000000000000000", howToCall: 0, data: "0x"}
+        sigTwo = await marketplace.sign(two, nftBuyer) // in an actual implementation, this should be signed by the buyer
+
+        // Trade NFT. tradeNFT needs to be called by the nftBuyer since the buyer needs to pay the TFuel
+        assertIsRejected(
+			marketplace.tradeNFT(one, sigOne, firstCall, two, sigTwo, secondCall, ZERO_BYTES32, {from: nftBuyer, value: sellingPrice}),
+			/Static call failed/,
+			'VM Exception while processing transaction: revert Static call failed.'
+		)
+
+        //
+        // Test 4. Seller tries to sell a fake ERC721 (ERC721 address mismatch between seller and buyer)
+        //
+
+        // NFT Seller
+        selectorOne = web3.eth.abi.encodeFunctionSignature('ERC721ForETH(bytes,address[7],uint8[2],uint256[6],bytes,bytes)')
+        paramsOne = web3.eth.abi.encodeParameters(['address[2]', 'uint256[2]'], [[erc721fake.address, "0x0000000000000000000000000000000000000000"], [nftTokenID, sellingPrice]]) 
+        one = {registry: registry.address, maker: nftSeller, staticTarget: statici.address, staticSelector: selectorOne, staticExtradata: paramsOne, maximumFill: 1, listingTime: '0', expirationTime: '10000000000', salt: '11'}
+        firstData = erc721fakec.methods.transferFrom(nftSeller, nftBuyer, nftTokenID).encodeABI()
+        firstCall = {target: erc721fake.address, howToCall: 0, data: firstData}
+        sigOne = await marketplace.sign(one, nftSeller) // in an actual implementation, this should be signed by the seller
+
+        // NFT Buyer, target: "0x0000000000000000000000000000000000000000" indicates buying with TFuel
+        selectorTwo = web3.eth.abi.encodeFunctionSignature('ETHForERC721(bytes,address[7],uint8[2],uint256[6],bytes,bytes)')
+        paramsTwo = web3.eth.abi.encodeParameters(['address[2]', 'uint256[2]'], [["0x0000000000000000000000000000000000000000", erc721.address], [nftTokenID, buyingPrice]])
+        two = {registry: registry.address, maker: nftBuyer, staticTarget: statici.address, staticSelector: selectorTwo, staticExtradata: paramsTwo, maximumFill: 1, listingTime: '0', expirationTime: '10000000000', salt: '12'}
+        secondCall = {target: "0x0000000000000000000000000000000000000000", howToCall: 0, data: "0x"}
+        sigTwo = await marketplace.sign(two, nftBuyer) // in an actual implementation, this should be signed by the buyer
+
+        // Trade NFT. tradeNFT needs to be called by the nftBuyer since the buyer needs to pay the TFuel
+        assertIsRejected(
+			marketplace.tradeNFT(one, sigOne, firstCall, two, sigTwo, secondCall, ZERO_BYTES32, {from: nftBuyer, value: sellingPrice}),
+			/First call failed/,
+			'VM Exception while processing transaction: revert First call failed.'
+		)
+
+        //
+        // Test 5. Mismatched selling and buying price (the buyer attemps to pay lower than the selling price)
+        //
+
+        // NFT Seller
+        selectorOne = web3.eth.abi.encodeFunctionSignature('ERC721ForETH(bytes,address[7],uint8[2],uint256[6],bytes,bytes)')
+        paramsOne = web3.eth.abi.encodeParameters(['address[2]', 'uint256[2]'], [[erc721.address, "0x0000000000000000000000000000000000000000"], [nftTokenID, sellingPrice]]) 
+        one = {registry: registry.address, maker: nftSeller, staticTarget: statici.address, staticSelector: selectorOne, staticExtradata: paramsOne, maximumFill: 1, listingTime: '0', expirationTime: '10000000000', salt: '11'}
+        firstData = erc721c.methods.transferFrom(nftSeller, nftBuyer, nftTokenID).encodeABI()
+        firstCall = {target: erc721.address, howToCall: 0, data: firstData}
+        sigOne = await marketplace.sign(one, nftSeller) // in an actual implementation, this should be signed by the seller
+
+        // NFT Buyer, target: "0x0000000000000000000000000000000000000000" indicates buying with TFuel
+        selectorTwo = web3.eth.abi.encodeFunctionSignature('ETHForERC721(bytes,address[7],uint8[2],uint256[6],bytes,bytes)')
+        paramsTwo = web3.eth.abi.encodeParameters(['address[2]', 'uint256[2]'], [["0x0000000000000000000000000000000000000000", erc721.address], [nftTokenID, buyingPrice]])
+        two = {registry: registry.address, maker: nftBuyer, staticTarget: statici.address, staticSelector: selectorTwo, staticExtradata: paramsTwo, maximumFill: 1, listingTime: '0', expirationTime: '10000000000', salt: '12'}
+        secondCall = {target: "0x0000000000000000000000000000000000000000", howToCall: 0, data: "0x"}
+        sigTwo = await marketplace.sign(two, nftBuyer) // in an actual implementation, this should be signed by the buyer
+
+        // Trade NFT. tradeNFT needs to be called by the nftBuyer since the buyer needs to pay the TFuel
+        assertIsRejected(
+			marketplace.tradeNFT(one, sigOne, firstCall, two, sigTwo, secondCall, ZERO_BYTES32, {from: nftBuyer, value: sellingPrice-1}),
+			/invalid amount of TFuel for the purchase/,
+			'VM Exception while processing transaction: revert invalid amount of TFuel for the purchase.'
+		)
+
+        //
+        // The last test. Should succeed
+        //
+
+        // NFT Seller
+        selectorOne = web3.eth.abi.encodeFunctionSignature('ERC721ForETH(bytes,address[7],uint8[2],uint256[6],bytes,bytes)')
+        paramsOne = web3.eth.abi.encodeParameters(['address[2]', 'uint256[2]'], [[erc721.address, "0x0000000000000000000000000000000000000000"], [nftTokenID, sellingPrice]]) 
+        one = {registry: registry.address, maker: nftSeller, staticTarget: statici.address, staticSelector: selectorOne, staticExtradata: paramsOne, maximumFill: 1, listingTime: '0', expirationTime: '10000000000', salt: '11'}
+        firstData = erc721c.methods.transferFrom(nftSeller, nftBuyer, nftTokenID).encodeABI()
+        firstCall = {target: erc721.address, howToCall: 0, data: firstData}
+        sigOne = await marketplace.sign(one, nftSeller) // in an actual implementation, this should be signed by the seller
+
+        // NFT Buyer, target: "0x0000000000000000000000000000000000000000" indicates buying with TFuel
+        selectorTwo = web3.eth.abi.encodeFunctionSignature('ETHForERC721(bytes,address[7],uint8[2],uint256[6],bytes,bytes)')
+        paramsTwo = web3.eth.abi.encodeParameters(['address[2]', 'uint256[2]'], [["0x0000000000000000000000000000000000000000", erc721.address], [nftTokenID, buyingPrice]])
+        two = {registry: registry.address, maker: nftBuyer, staticTarget: statici.address, staticSelector: selectorTwo, staticExtradata: paramsTwo, maximumFill: 1, listingTime: '0', expirationTime: '10000000000', salt: '12'}
+        secondCall = {target: "0x0000000000000000000000000000000000000000", howToCall: 0, data: "0x"}
+        sigTwo = await marketplace.sign(two, nftBuyer) // in an actual implementation, this should be signed by the buyer
+
+        // Trade NFT. tradeNFT needs to be called by the nftBuyer since the buyer needs to pay the TFuel
         await marketplace.tradeNFT(one, sigOne, firstCall, two, sigTwo, secondCall, ZERO_BYTES32, {from: nftBuyer, value: sellingPrice})
 
-        // -------------- Verify the NFT Trade -------------- //
-
+        // Verify the NFT Trade
         let tokenOwner = await erc721.ownerOf(nftTokenID)
         assert.equal(tokenOwner, nftBuyer, 'Incorrect token owner')
 
@@ -341,12 +467,6 @@ contract('ThetaDrop-Marketplace-NFT-Purchases-Edge-Cases', (accounts) => {
         let platformFeeRecipientFinalEthBalance = await web3.eth.getBalance(platformFeeRecipient)
         let buyerTDropBalance = await tdropToken.balanceOf(nftBuyer)
         let sellerTDropBalance = await tdropToken.balanceOf(nftSeller)
-
-        // console.log("buyerFinalEthBalance:                 ", buyerFinalEthBalance)
-        // console.log("sellerFinalEthBalance:                ", sellerFinalEthBalance)
-        // console.log("platformFeeRecipientFinalEthBalance:  ", platformFeeRecipientFinalEthBalance)
-        // console.log("buyerTDropBalance:                    ", buyerTDropBalance.toString())
-        // console.log("sellerTDropBalance:                   ", sellerTDropBalance.toString())
         
         split = primaryMarketPlatformFeeSplitBasisPoints / 10000.0
         expectedPlatformFee = Math.floor(buyingPrice * split)
