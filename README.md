@@ -46,6 +46,8 @@ MODE=trace truffle test --network=theta_privatenet
 MODE=trace truffle test test/10-theta-drop-marketplace-nft-purchases.js --network=theta_privatenet
 ```
 
+Note: Test case `12-theta-drop-nft-liquidity-mining.js` is expect to fail when tested against `theta_privatent` since it calls `evm_mine`. Should only test it against `ganache`.
+
 ### Linting
 
 Lint all Solidity files with:
