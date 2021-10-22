@@ -170,7 +170,7 @@ contract('ThetaDrop-NFT-Liquidity-Mining', (accounts) => {
         assert.equal(platformFeeRecipientEthBalanceIncreaseBN.toString(), expectedPlatformFeeBN.toString(), 'Incorrect platform fee transferred')
     }
 
-    let verifyLiquidityMiningResults = async (nftSeller, nftBuyer, sellerTDropBalanceB4Trade, buyerTDropBalanceB4Trade, currentTradePrice, highestSellingPriceInThePast, currentTradeBlockHeight, lastTradeBlockHeight, print) => {
+    let verifyLiquidityMiningResults = async (nftSeller, nftBuyer, sellerTDropBalanceB4Trade, buyerTDropBalanceB4Trade, currentTradePrice, highestSellingPriceInThePast, currentTradeBlockHeight, lastTradeBlockHeight, maxDiff, print) => {
         let sellerTDropBalance = await tdropToken.balanceOf(nftSeller)
         let buyerTDropBalance = await tdropToken.balanceOf(nftBuyer)
         let buyerTDropIncrease = buyerTDropBalance.sub(new BN(buyerTDropBalanceB4Trade))
@@ -196,7 +196,6 @@ contract('ThetaDrop-NFT-Liquidity-Mining', (accounts) => {
         }
 
         // expectedTDropMined - maxDiff < buyerTDropIncrease < expectedTDropMined + maxDiff
-        let maxDiff = new BN('100000000000000000') // 10^17 TDropWei = 0.1 TDrop
         assert.isTrue(buyerTDropIncrease.gt(expectedTDropMinedInWei.sub(maxDiff)))
         assert.isTrue(buyerTDropIncrease.lt(expectedTDropMinedInWei.add(maxDiff)))
     }
@@ -223,8 +222,8 @@ contract('ThetaDrop-NFT-Liquidity-Mining', (accounts) => {
         // The seller puts the NFT on sale
         await erc721.setApprovalForAll(tokenSwapAgentAddr, true, {from: nftSeller})
 
-        let lastTradeBlockHeight = new BN(0)
         // The NFT trade
+        let lastTradeBlockHeight = new BN(0)
         await mineBlocks(10) // advance a few blocks
         let currentTradeBlockHeight = await getBlockHeight(true)
 
@@ -240,6 +239,221 @@ contract('ThetaDrop-NFT-Liquidity-Mining', (accounts) => {
         await marketplace.tradeNFT(one, sigOne, firstCall, two, sigTwo, secondCall, ZERO_BYTES32, {from: nftBuyer, value: currentTradePrice})
 
         await verifyTradeOutcome(erc721, nftSeller, nftBuyer, nftTokenID, currentTradePrice, sellerEthBalanceB4Trade, buyerEthBalanceB4Trade, platformFeeRecipientEthBalanceB4Trade, true)
-        await verifyLiquidityMiningResults(nftSeller, nftBuyer, sellerTDropBalanceB4Trade, buyerTDropBalanceB4Trade, currentTradePrice, highestSellingPriceInThePast, currentTradeBlockHeight, lastTradeBlockHeight, true)
+        let maxDiff = new BN('100000000000000000') // 10^17 TDropWei = 0.1 TDrop
+        await verifyLiquidityMiningResults(nftSeller, nftBuyer, sellerTDropBalanceB4Trade, buyerTDropBalanceB4Trade, currentTradePrice, highestSellingPriceInThePast, currentTradeBlockHeight, lastTradeBlockHeight, maxDiff, true)
+    })
+
+    it('NFT Liquidity Mining Multiple Trades', async () => {
+        let nftTokenID = 9912879027088
+
+        let tradePrice1 = (new BN(2)).mul(dec18)
+        let tradePrice2 = (new BN(300)).mul(dec18)     // price increases
+        let tradePrice3 = (new BN(103)).mul(dec18)     // price decreases
+        let tradePrice4 = (new BN(288)).mul(dec18)     // price increases, but less than the highest traded price in history
+        let tradePrice5 = (new BN(1999999)).mul(dec18) // price increases, and surpasses the highest traded price in history
+
+        let user1 = accounts[1]
+        let user2 = accounts[2]
+        let user3 = accounts[3]
+        let user4 = accounts[4]
+
+        let platformFeeRecipient = accounts[7]
+
+        let {registry, marketplace, tokenSwapAgent, dataWarehouse, atomicizer, statici, tdropToken} = await deployCoreContracts()
+        let tokenSwapAgentAddr = tokenSwapAgent.address
+        let [erc721] = await deploy([TestERC721])
+
+        await erc721.mint(user1, nftTokenID)
+
+        await erc721.setApprovalForAll(tokenSwapAgentAddr, true, {from: user1})
+        await erc721.setApprovalForAll(tokenSwapAgentAddr, true, {from: user2})
+        await erc721.setApprovalForAll(tokenSwapAgentAddr, true, {from: user3})
+        await erc721.setApprovalForAll(tokenSwapAgentAddr, true, {from: user4})
+
+        //
+        // The First Trade
+        //
+
+        console.log("-------------------------------------------------------------")
+        console.log("NFT Trade")
+        console.log("")
+
+
+        nftSeller = user1
+        nftBuyer  = user2
+        currentTradePrice = tradePrice1
+        highestSellingPriceInThePast = new BN(0)
+        lastTradeBlockHeight = new BN(0)
+        await mineBlocks(100) // advance a few blocks
+        currentTradeBlockHeight = await getBlockHeight(true)
+        console.log("lastTradeBlockHeight:", lastTradeBlockHeight.toString(), "currentTradeBlockHeight:", currentTradeBlockHeight.toString())
+
+        buyerEthBalanceB4Trade = await web3.eth.getBalance(nftBuyer)
+        sellerEthBalanceB4Trade = await web3.eth.getBalance(nftSeller)
+        platformFeeRecipientEthBalanceB4Trade = await web3.eth.getBalance(platformFeeRecipient)
+        sellerTDropBalanceB4Trade = await tdropToken.balanceOf(nftSeller)
+        buyerTDropBalanceB4Trade = await tdropToken.balanceOf(nftBuyer)
+
+        nftSellerSalt = getSalt()
+        nftBuyerSalt  = getSalt()
+        {
+            let {one, sigOne, firstCall, two, sigTwo, secondCall} = await prepareForNFTTrade(marketplace, erc721, nftSeller, nftSellerSalt, nftBuyer, nftBuyerSalt, nftTokenID, currentTradePrice)        
+            await marketplace.tradeNFT(one, sigOne, firstCall, two, sigTwo, secondCall, ZERO_BYTES32, {from: nftBuyer, value: currentTradePrice})
+        }
+        await verifyTradeOutcome(erc721, nftSeller, nftBuyer, nftTokenID, currentTradePrice, sellerEthBalanceB4Trade, buyerEthBalanceB4Trade, platformFeeRecipientEthBalanceB4Trade, true)
+
+        maxDiff = new BN('100000000000000000') // 10^17 TDropWei = 0.1 TDrop
+        await verifyLiquidityMiningResults(nftSeller, nftBuyer, sellerTDropBalanceB4Trade, buyerTDropBalanceB4Trade, currentTradePrice, highestSellingPriceInThePast, currentTradeBlockHeight, lastTradeBlockHeight, maxDiff, true)
+          
+        console.log("-------------------------------------------------------------")
+        console.log("")
+
+        //
+        // The Second Trade
+        //
+
+        console.log("-------------------------------------------------------------")
+        console.log("NFT Trade")
+        console.log("")
+
+        nftSeller = user2
+        nftBuyer  = user3
+        currentTradePrice = tradePrice2
+        highestSellingPriceInThePast = tradePrice1
+        lastTradeBlockHeight = currentTradeBlockHeight
+        await mineBlocks(5) // advance a few blocks
+        currentTradeBlockHeight = await getBlockHeight(true)
+        console.log("lastTradeBlockHeight:", lastTradeBlockHeight.toString(), "currentTradeBlockHeight:", currentTradeBlockHeight.toString())
+
+        buyerEthBalanceB4Trade = await web3.eth.getBalance(nftBuyer)
+        sellerEthBalanceB4Trade = await web3.eth.getBalance(nftSeller)
+        platformFeeRecipientEthBalanceB4Trade = await web3.eth.getBalance(platformFeeRecipient)
+        sellerTDropBalanceB4Trade = await tdropToken.balanceOf(nftSeller)
+        buyerTDropBalanceB4Trade = await tdropToken.balanceOf(nftBuyer)
+
+        nftSellerSalt = getSalt()
+        nftBuyerSalt  = getSalt()
+        {
+            let {one, sigOne, firstCall, two, sigTwo, secondCall} = await prepareForNFTTrade(marketplace, erc721, nftSeller, nftSellerSalt, nftBuyer, nftBuyerSalt, nftTokenID, currentTradePrice)        
+            await marketplace.tradeNFT(one, sigOne, firstCall, two, sigTwo, secondCall, ZERO_BYTES32, {from: nftBuyer, value: currentTradePrice})
+        }
+        await verifyTradeOutcome(erc721, nftSeller, nftBuyer, nftTokenID, currentTradePrice, sellerEthBalanceB4Trade, buyerEthBalanceB4Trade, platformFeeRecipientEthBalanceB4Trade, true)
+        
+        maxDiff = new BN('2000000000000000000') // 2 TDrop, small block gaps between the two trades, smart contract and JS reading on the block gap might different. So larger maxDiff
+        await verifyLiquidityMiningResults(nftSeller, nftBuyer, sellerTDropBalanceB4Trade, buyerTDropBalanceB4Trade, currentTradePrice, highestSellingPriceInThePast, currentTradeBlockHeight, lastTradeBlockHeight, maxDiff, true)
+         
+        console.log("-------------------------------------------------------------")
+        console.log("")
+
+        //
+        // The Third Trade
+        //
+
+        console.log("-------------------------------------------------------------")
+        console.log("NFT Trade")
+        console.log("")
+
+        nftSeller = user3
+        nftBuyer  = user4
+        currentTradePrice = tradePrice3
+        highestSellingPriceInThePast = tradePrice2
+        lastTradeBlockHeight = currentTradeBlockHeight
+        await mineBlocks(300) // advance a few blocks
+        currentTradeBlockHeight = await getBlockHeight(true)
+        console.log("lastTradeBlockHeight:", lastTradeBlockHeight.toString(), "currentTradeBlockHeight:", currentTradeBlockHeight.toString())
+
+        buyerEthBalanceB4Trade = await web3.eth.getBalance(nftBuyer)
+        sellerEthBalanceB4Trade = await web3.eth.getBalance(nftSeller)
+        platformFeeRecipientEthBalanceB4Trade = await web3.eth.getBalance(platformFeeRecipient)
+        sellerTDropBalanceB4Trade = await tdropToken.balanceOf(nftSeller)
+        buyerTDropBalanceB4Trade = await tdropToken.balanceOf(nftBuyer)
+
+        nftSellerSalt = getSalt()
+        nftBuyerSalt  = getSalt()
+        {
+            let {one, sigOne, firstCall, two, sigTwo, secondCall} = await prepareForNFTTrade(marketplace, erc721, nftSeller, nftSellerSalt, nftBuyer, nftBuyerSalt, nftTokenID, currentTradePrice)        
+            await marketplace.tradeNFT(one, sigOne, firstCall, two, sigTwo, secondCall, ZERO_BYTES32, {from: nftBuyer, value: currentTradePrice})
+        }
+        await verifyTradeOutcome(erc721, nftSeller, nftBuyer, nftTokenID, currentTradePrice, sellerEthBalanceB4Trade, buyerEthBalanceB4Trade, platformFeeRecipientEthBalanceB4Trade, true)
+        
+        maxDiff = new BN('1') // 1 TDropWei, very small error tolerance since this trade is expected to mine exactly epsilon amount of TDrop since the current trade price doesn't exceed the historical height
+        await verifyLiquidityMiningResults(nftSeller, nftBuyer, sellerTDropBalanceB4Trade, buyerTDropBalanceB4Trade, currentTradePrice, highestSellingPriceInThePast, currentTradeBlockHeight, lastTradeBlockHeight, maxDiff, true)
+         
+        console.log("-------------------------------------------------------------")
+        console.log("")
+
+        //
+        // The Fourth Trade
+        //
+
+        console.log("-------------------------------------------------------------")
+        console.log("NFT Trade")
+        console.log("")
+
+        nftSeller = user4
+        nftBuyer  = user1
+        currentTradePrice = tradePrice4
+        highestSellingPriceInThePast = tradePrice2
+        lastTradeBlockHeight = currentTradeBlockHeight
+        await mineBlocks(15) // advance a few blocks
+        currentTradeBlockHeight = await getBlockHeight(true)
+        console.log("lastTradeBlockHeight:", lastTradeBlockHeight.toString(), "currentTradeBlockHeight:", currentTradeBlockHeight.toString())
+
+        buyerEthBalanceB4Trade = await web3.eth.getBalance(nftBuyer)
+        sellerEthBalanceB4Trade = await web3.eth.getBalance(nftSeller)
+        platformFeeRecipientEthBalanceB4Trade = await web3.eth.getBalance(platformFeeRecipient)
+        sellerTDropBalanceB4Trade = await tdropToken.balanceOf(nftSeller)
+        buyerTDropBalanceB4Trade = await tdropToken.balanceOf(nftBuyer)
+
+        nftSellerSalt = getSalt()
+        nftBuyerSalt  = getSalt()
+        {
+            let {one, sigOne, firstCall, two, sigTwo, secondCall} = await prepareForNFTTrade(marketplace, erc721, nftSeller, nftSellerSalt, nftBuyer, nftBuyerSalt, nftTokenID, currentTradePrice)        
+            await marketplace.tradeNFT(one, sigOne, firstCall, two, sigTwo, secondCall, ZERO_BYTES32, {from: nftBuyer, value: currentTradePrice})
+        }
+        await verifyTradeOutcome(erc721, nftSeller, nftBuyer, nftTokenID, currentTradePrice, sellerEthBalanceB4Trade, buyerEthBalanceB4Trade, platformFeeRecipientEthBalanceB4Trade, true)
+        
+        maxDiff = new BN('1') // 1 TDropWei, very small error tolerance since this trade is expected to mine exactly epsilon amount of TDrop since the current trade price doesn't exceed the historical height
+        await verifyLiquidityMiningResults(nftSeller, nftBuyer, sellerTDropBalanceB4Trade, buyerTDropBalanceB4Trade, currentTradePrice, highestSellingPriceInThePast, currentTradeBlockHeight, lastTradeBlockHeight, maxDiff, true)
+         
+        console.log("-------------------------------------------------------------")
+        console.log("")
+
+        //
+        // The Fifth Trade
+        //
+
+        console.log("-------------------------------------------------------------")
+        console.log("NFT Trade")
+        console.log("")
+
+        nftSeller = user1
+        nftBuyer  = user3
+        currentTradePrice = tradePrice5
+        highestSellingPriceInThePast = tradePrice2
+        lastTradeBlockHeight = currentTradeBlockHeight
+        await mineBlocks(23) // advance a few blocks
+        currentTradeBlockHeight = await getBlockHeight(true)
+        console.log("lastTradeBlockHeight:", lastTradeBlockHeight.toString(), "currentTradeBlockHeight:", currentTradeBlockHeight.toString())
+
+        buyerEthBalanceB4Trade = await web3.eth.getBalance(nftBuyer)
+        sellerEthBalanceB4Trade = await web3.eth.getBalance(nftSeller)
+        platformFeeRecipientEthBalanceB4Trade = await web3.eth.getBalance(platformFeeRecipient)
+        sellerTDropBalanceB4Trade = await tdropToken.balanceOf(nftSeller)
+        buyerTDropBalanceB4Trade = await tdropToken.balanceOf(nftBuyer)
+
+        nftSellerSalt = getSalt()
+        nftBuyerSalt  = getSalt()
+        {
+            let {one, sigOne, firstCall, two, sigTwo, secondCall} = await prepareForNFTTrade(marketplace, erc721, nftSeller, nftSellerSalt, nftBuyer, nftBuyerSalt, nftTokenID, currentTradePrice)        
+            await marketplace.tradeNFT(one, sigOne, firstCall, two, sigTwo, secondCall, ZERO_BYTES32, {from: nftBuyer, value: currentTradePrice})
+        }
+        await verifyTradeOutcome(erc721, nftSeller, nftBuyer, nftTokenID, currentTradePrice, sellerEthBalanceB4Trade, buyerEthBalanceB4Trade, platformFeeRecipientEthBalanceB4Trade, true)
+        
+        maxDiff = new BN('1') // 1 TDropWei, very small error tolerance since this trade is expected to mine exactly epsilon amount of TDrop since the current trade price doesn't exceed the historical height
+        await verifyLiquidityMiningResults(nftSeller, nftBuyer, sellerTDropBalanceB4Trade, buyerTDropBalanceB4Trade, currentTradePrice, highestSellingPriceInThePast, currentTradeBlockHeight, lastTradeBlockHeight, maxDiff, true)
+         
+        console.log("-------------------------------------------------------------")
+        console.log("")
     })
 })
