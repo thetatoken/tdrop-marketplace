@@ -450,7 +450,7 @@ contract('ThetaDrop-NFT-Liquidity-Mining', (accounts) => {
         }
         await verifyTradeOutcome(erc721, nftSeller, nftBuyer, nftTokenID, currentTradePrice, sellerEthBalanceB4Trade, buyerEthBalanceB4Trade, platformFeeRecipientEthBalanceB4Trade, true)
         
-        maxDiff = new BN('1') // 1 TDropWei, very small error tolerance since this trade is expected to mine exactly epsilon amount of TDrop since the current trade price doesn't exceed the historical height
+        maxDiff = new BN('100000000000000000') // 10^17 TDropWei = 0.1 TDrop
         await verifyLiquidityMiningResults(nftSeller, nftBuyer, sellerTDropBalanceB4Trade, buyerTDropBalanceB4Trade, currentTradePrice, highestSellingPriceInThePast, currentTradeBlockHeight, lastTradeBlockHeight, maxDiff, true)
          
         console.log("-------------------------------------------------------------")
