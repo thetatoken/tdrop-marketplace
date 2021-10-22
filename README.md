@@ -17,7 +17,7 @@ yarn
 To test against ganache, first install ganache following the steps [here](https://www.trufflesuite.com/ganache). Then, start `ganache-cli` in a terminal with the following commond:
 
 ```bash
-ganache-cli --networkId 366 --port 18888
+ganache-cli --defaultBalanceEther 1000000000 --networkId 366 --port 18888
 ```
 
 Next, run the tests with
