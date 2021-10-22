@@ -16,7 +16,7 @@ const BN = web3.utils.BN
 
 const primaryMarketPlatformFeeSplitBasisPoints = 3000
 const secondaryMarketPlatformFeeSplitBasisPoints = 1000
-const epsilon = new BN('5000000000000000000') // 5 * 10**18, 5 TDrop
+const epsilon = new BN('1000000000000000000') // 1 * 10**18, 1 TDrops
 const alpha = new BN('1000000000000000000')
 const gamma = new BN('10000000000000').sub(new BN(1))
 const omega = new BN('100000');
@@ -75,22 +75,24 @@ contract('ThetaDrop-NFT-Liquidity-Mining', (accounts) => {
     }
 
     let calculateExpectedTDropMined = (numBlocksElapsed, price, highestSellingPriceInThePast) => {
-        let priceIncrease = price.sub(highestSellingPriceInThePast)
-        if (priceIncrease.lt(0)) {
+        let priceIncrease = new BN(price).sub(new BN(highestSellingPriceInThePast))
+        if (priceIncrease.lt(new BN(0))) {
             return epsilon
         } else {
-            let normalizedPriceIncrease = priceIncrease.div(gamma.add(new BN(1))).toNumber()
+            let normalizedPriceIncrease = priceIncrease.div(gamma.add(new BN(1)))
 
-            // f = log2(normalizedPriceIncrease + 1)
-            let f = Math.log(normalizedPriceIncrease + 1) / Math.log(2)
+            // f = ceil(log2(normalizedPriceIncrease + 1))
+            let f = new BN(Math.ceil(Math.log(normalizedPriceIncrease.add(new BN(1))) / Math.log(2)))
 
-            // g = 1 - 10000 / (omega * numBlocksElapsed + 10000)
-            let d = (omega.mul(new BN(numBlocksElapsed + 1)))
-            let g = d.sub(omega).div(d)
+            // g = 1 - 1000000 / (omega * numBlocksElapsed + 1000000) = omega * numBlocksElapsed / (omega * numBlocksElapsed + 1000000)
+            let gNumer = omega.mul(new BN(numBlocksElapsed))
+            let gDenom = omega.mul(new BN(numBlocksElapsed)).add(new BN(1000000))
     
             // tdropMined = alpha * f * g + epsilon
-            let tdropMined = alpha.mul(f).mul(g).add(epsilon)
-            if (maxRewardPerTrade.lt(tdropMined)) {
+            let tdropMined = alpha.mul(f).mul(gNumer).div(gDenom)
+            tdropMined = tdropMined.add(epsilon)
+
+            if (tdropMined.gt(maxRewardPerTrade)) {
                 tdropMined = maxRewardPerTrade
             }
 
@@ -156,7 +158,7 @@ contract('ThetaDrop-NFT-Liquidity-Mining', (accounts) => {
         // -------------- Advance a few blocks -------------- //
         
         await mineBlocks(10)
-        let h1 = getBlockHeight(true)
+        let h1 = await getBlockHeight(true)
 
         // -------------- Execute the NFT Trade -------------- //
 
@@ -186,9 +188,24 @@ contract('ThetaDrop-NFT-Liquidity-Mining', (accounts) => {
 
         assert.equal(sellerFinalEthBalanceBN.sub(sellerInitialEthBalanceBN), expectedNFTSellerEarning, 'Incorrect amount of TFuel transferred')
         assert.equal(platformFeeRecipientFinalEthBalanceBN.sub(platformFeeRecipientInitialEthBalanceBN), expectedPlatformFee, 'Incorrect platform fee transferred')
-        assert.isTrue(sellerTDropBalance.cmp(new BN('0')) == 0) // sellerTDropBalance == 0
-        assert.isTrue(buyerTDropBalance.cmp(epsilon) == 1) // buyerTDropBalance > epsilon
 
-        console.log("buyerTDropBalance:", buyerTDropBalance.toString())
+        // -------------- Verify the Liquidity Mining Results -------------- //
+
+        assert.isTrue(sellerTDropBalance.cmp(new BN('0')) == 0) // sellerTDropBalance == 0
+
+        let expectedTDropMined = calculateExpectedTDropMined(h1, sellingPrice, 0)
+
+        console.log("buyerTDropBalance :", buyerTDropBalance.toString(), "TDropWei")
+        console.log("expectedTDropMined:", expectedTDropMined.toString(), "TDropWei")
+
+        let diffInTDropWei = buyerTDropBalance.sub(expectedTDropMined)
+        let diffInTDrop = diffInTDropWei.mul(new BN(100000000)).div(new BN('1000000000000000000')).toNumber() / 100000000
+        console.log("diffInTDropWei    :", diffInTDropWei.toString(), "TDropWei")
+        console.log("diffInTDrop       :", diffInTDrop, "TDrop")
+
+        // expectedTDropMined - maxDiff < buyerTDropBalance < expectedTDropMined + maxDiff
+        let maxDiff = new BN('1000000000000000') // 10^15 TDropWei = 0.001 TDrop
+        assert.isTrue(buyerTDropBalance.gt(expectedTDropMined.sub(maxDiff)))
+        assert.isTrue(buyerTDropBalance.lt(expectedTDropMined.add(maxDiff)))
     })
 })
