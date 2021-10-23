@@ -108,7 +108,7 @@ contract ThetaDropMarketplace is ExchangeCore {
         uint alpha;
         uint gamma;
         uint omega;
-        uint priceThreshold;
+        uint priceThreshold; // the minimal TFuel payment for TDrop mining
         uint maxRewardPerTrade;
     }
 
@@ -187,9 +187,6 @@ contract ThetaDropMarketplace is ExchangeCore {
             chainId           : chainId,
             verifyingContract : address(this)
         }));
-        // for (uint ind = 0; ind < registryAddrs.length; ind++) {
-        //   registries[registryAddrs[ind]] = true;
-        // }
         if (customPersonalSignPrefix.length > 0) {
           personalSignPrefix = customPersonalSignPrefix;
         }
@@ -506,8 +503,6 @@ contract ThetaDropMarketplace is ExchangeCore {
             address buyerAddr = secondOrder.maker;
             address sellerAddr = firstOrder.maker;
             uint platformFeeInTNT20 = SafeMath.div(SafeMath.mul(price, platformFeeSplitBasisPoints), 10000);
-            // ERC20 paymentToken = ERC20(tnt20PaymentTokenAddr);
-            // require(paymentToken.transferFrom(buyerAddr, platformFeeRecipient, platformFeeInTNT20), "TNT20 payment token transfer failed");
             bool chargeSuccessful = tokenSwapAgent.transferFee(tnt20PaymentTokenAddr, buyerAddr, platformFeeRecipient, platformFeeInTNT20);
             require(chargeSuccessful, "TNT20 payment token transfer failed");
 
