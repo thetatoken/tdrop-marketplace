@@ -21,6 +21,7 @@ const alpha = new BN('1000000000000000000')
 //const gamma = new BN('100000000000000000').sub(new BN(1))
 const gamma = new BN('10000000000000').sub(new BN(1))
 const omega = new BN('100000');
+const priceThreshold = new BN('1000') // 1000 TFuelWei
 const maxRewardPerTrade = new BN('1000000000000000000000') // 1000 * 10**18, 1000 TDrop
 
 contract('ThetaDrop-Marketplace-NFT-Purchases', (accounts) => {
@@ -44,7 +45,7 @@ contract('ThetaDrop-Marketplace-NFT-Purchases', (accounts) => {
         await marketplace.setTokenSwapAgent(tokenSwapAgent.address, {from: admin})
         await marketplace.setDataWarehouse(dataWarehouse.address, {from: admin})
         await marketplace.enableNFTLiqudityMining(true, {from: admin})
-        await marketplace.updateLiquidityMiningParams(epsilon, alpha, gamma, omega, maxRewardPerTrade, {from: admin})
+        await marketplace.updateLiquidityMiningParams(epsilon, alpha, gamma, omega, priceThreshold, maxRewardPerTrade, {from: admin})
         await marketplace.enableLiqudityMiningOnlyForWhitelistedNFTs(false, {from: admin})
 
         await tokenSwapAgent.setMarketplace(marketplace.address, {from: admin})

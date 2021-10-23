@@ -19,6 +19,7 @@ const epsilon = new BN('1000000000000000000') // 1 * 10**18, 1 TDrops
 const alpha = new BN('1000000000000000000')
 const gamma = new BN('10000000000000').sub(new BN(1))
 const omega = new BN('100000');
+const priceThreshold = new BN('1500000000000000000') // 1.5*10**18, 1.5 TFuel
 const maxRewardPerTrade = new BN('1000000000000000000000') // 1000 * 10**18, 1000 TDrop
 
 //
@@ -49,7 +50,7 @@ contract('ThetaDrop-NFT-Liquidity-Mining', (accounts) => {
         await marketplace.setTokenSwapAgent(tokenSwapAgent.address, {from: admin})
         await marketplace.setDataWarehouse(dataWarehouse.address, {from: admin})
         await marketplace.enableNFTLiqudityMining(true, {from: admin})
-        await marketplace.updateLiquidityMiningParams(epsilon, alpha, gamma, omega, maxRewardPerTrade, {from: admin})
+        await marketplace.updateLiquidityMiningParams(epsilon, alpha, gamma, omega, priceThreshold, maxRewardPerTrade, {from: admin})
         await marketplace.enableLiqudityMiningOnlyForWhitelistedNFTs(false, {from: admin})
 
         await tokenSwapAgent.setMarketplace(marketplace.address, {from: admin})
@@ -81,29 +82,33 @@ contract('ThetaDrop-NFT-Liquidity-Mining', (accounts) => {
         let numBlocksElapsed = (new BN(currentTradeBlockHeight)).sub(new BN(lastTradeBlockHeight))
         assert.isTrue(numBlocksElapsed.gte(new BN(0)))
 
+        if (currentTradePrice.lte(priceThreshold)) {
+            return new BN(0)
+        }
+
         let priceIncrease = (new BN(currentTradePrice)).sub(new BN(highestSellingPriceInThePast))
         if (priceIncrease.lt(new BN(0))) {
             return epsilon
-        } else {
-            let normalizedPriceIncrease = priceIncrease.div(gamma.add(new BN(1)))
+        } 
+        
+        let normalizedPriceIncrease = priceIncrease.div(gamma.add(new BN(1)))
 
-            // f = ceil(log2(normalizedPriceIncrease + 1))
-            let f = new BN(Math.ceil(Math.log(normalizedPriceIncrease.add(new BN(1))) / Math.log(2)))
+        // f = ceil(log2(normalizedPriceIncrease + 1))
+        let f = new BN(Math.ceil(Math.log(normalizedPriceIncrease.add(new BN(1))) / Math.log(2)))
 
-            // g = 1 - 1000000 / (omega * numBlocksElapsed + 1000000) = omega * numBlocksElapsed / (omega * numBlocksElapsed + 1000000)
-            let gNumer = omega.mul(new BN(numBlocksElapsed))
-            let gDenom = omega.mul(new BN(numBlocksElapsed)).add(new BN(1000000))
-    
-            // tdropMined = alpha * f * g + epsilon
-            let tdropMined = alpha.mul(f).mul(gNumer).div(gDenom)
-            tdropMined = tdropMined.add(epsilon)
+        // g = 1 - 1000000 / (omega * numBlocksElapsed + 1000000) = omega * numBlocksElapsed / (omega * numBlocksElapsed + 1000000)
+        let gNumer = omega.mul(new BN(numBlocksElapsed))
+        let gDenom = omega.mul(new BN(numBlocksElapsed)).add(new BN(1000000))
 
-            if (tdropMined.gt(maxRewardPerTrade)) {
-                tdropMined = maxRewardPerTrade
-            }
+        // tdropMined = alpha * f * g + epsilon = alpha * f * gNumer / gDenom + epsilon
+        let tdropMined = alpha.mul(f).mul(gNumer).div(gDenom)
+        tdropMined = tdropMined.add(epsilon)
 
-            return tdropMined
+        if (tdropMined.gt(maxRewardPerTrade)) {
+            tdropMined = maxRewardPerTrade
         }
+
+        return tdropMined
     }
 
     let prepareForNFTTrade = async (marketplace, erc721, nftSeller, nftSellerSalt, nftBuyer, nftBuyerSalt, nftTokenID, price) => {
@@ -251,6 +256,7 @@ contract('ThetaDrop-NFT-Liquidity-Mining', (accounts) => {
         let tradePrice3 = (new BN(103)).mul(dec18)     // price decreases
         let tradePrice4 = (new BN(288)).mul(dec18)     // price increases, but less than the highest traded price in history
         let tradePrice5 = (new BN(1999999)).mul(dec18) // price increases, and surpasses the highest traded price in history
+        let tradePrice6 = (new BN(1)).mul(dec18)       // not eligible to receive TDrop since it is lower than the priceThreshold
 
         let user1 = accounts[1]
         let user2 = accounts[2]
@@ -453,6 +459,46 @@ contract('ThetaDrop-NFT-Liquidity-Mining', (accounts) => {
         maxDiff = new BN('100000000000000000') // 10^17 TDropWei = 0.1 TDrop
         await verifyLiquidityMiningResults(nftSeller, nftBuyer, sellerTDropBalanceB4Trade, buyerTDropBalanceB4Trade, currentTradePrice, highestSellingPriceInThePast, currentTradeBlockHeight, lastTradeBlockHeight, maxDiff, true)
          
+        console.log("-------------------------------------------------------------")
+        console.log("")
+
+        //
+        // The Sixth Trade
+        //
+
+        console.log("-------------------------------------------------------------")
+        console.log("NFT Trade")
+        console.log("")
+
+        nftSeller = user3
+        nftBuyer  = user1
+        currentTradePrice = tradePrice6
+        highestSellingPriceInThePast = tradePrice5
+        lastTradeBlockHeight = currentTradeBlockHeight
+        await mineBlocks(10) // advance a few blocks
+        currentTradeBlockHeight = await getBlockHeight(true)
+        console.log("lastTradeBlockHeight:", lastTradeBlockHeight.toString(), "currentTradeBlockHeight:", currentTradeBlockHeight.toString())
+
+        buyerEthBalanceB4Trade = await web3.eth.getBalance(nftBuyer)
+        sellerEthBalanceB4Trade = await web3.eth.getBalance(nftSeller)
+        platformFeeRecipientEthBalanceB4Trade = await web3.eth.getBalance(platformFeeRecipient)
+        sellerTDropBalanceB4Trade = await tdropToken.balanceOf(nftSeller)
+        buyerTDropBalanceB4Trade = await tdropToken.balanceOf(nftBuyer)
+
+        nftSellerSalt = getSalt()
+        nftBuyerSalt  = getSalt()
+        {
+            let {one, sigOne, firstCall, two, sigTwo, secondCall} = await prepareForNFTTrade(marketplace, erc721, nftSeller, nftSellerSalt, nftBuyer, nftBuyerSalt, nftTokenID, currentTradePrice)        
+            await marketplace.tradeNFT(one, sigOne, firstCall, two, sigTwo, secondCall, ZERO_BYTES32, {from: nftBuyer, value: currentTradePrice})
+        }
+        await verifyTradeOutcome(erc721, nftSeller, nftBuyer, nftTokenID, currentTradePrice, sellerEthBalanceB4Trade, buyerEthBalanceB4Trade, platformFeeRecipientEthBalanceB4Trade, true)
+        
+        maxDiff = new BN('100000000000000000') // 10^17 TDropWei = 0.1 TDrop
+        await verifyLiquidityMiningResults(nftSeller, nftBuyer, sellerTDropBalanceB4Trade, buyerTDropBalanceB4Trade, currentTradePrice, highestSellingPriceInThePast, currentTradeBlockHeight, lastTradeBlockHeight, maxDiff, true)
+        
+        buyerTDropBalance = await tdropToken.balanceOf(nftBuyer)
+        assert.equal(buyerTDropBalance.toString(), buyerTDropBalanceB4Trade.toString(), 'The buyer should not mine any TDrop since the trading price is lower than the priceThreshold')
+
         console.log("-------------------------------------------------------------")
         console.log("")
     })

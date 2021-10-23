@@ -108,6 +108,7 @@ contract ThetaDropMarketplace is ExchangeCore {
         uint alpha;
         uint gamma;
         uint omega;
+        uint priceThreshold;
         uint maxRewardPerTrade;
     }
 
@@ -174,7 +175,7 @@ contract ThetaDropMarketplace is ExchangeCore {
 
     event NFTTraded(address indexed seller, address indexed buyer, address indexed nftTokenAddress, uint nftTokenID, uint nftAmount, address paymentTokenAddress, uint paymentTokenAmount, uint tdropMined);
 
-    event CalculateTDropMined(uint alpha, uint priceInTFuelWei, uint highestSellingPriceInTFuelWei, uint gamma, uint omega, uint blockHeight, uint lastTradeBlockHeight, uint epsilon, uint maxRewardPerTrade);
+    event CalculateTDropMined(uint alpha, uint priceInTFuelWei, uint highestSellingPriceInTFuelWei, uint gamma, uint omega, uint blockHeight, uint lastTradeBlockHeight, uint epsilon, uint priceThreshold, uint maxRewardPerTrade);
 
     event MinedTDrop(address indexed recipient, uint tdropMined);
 
@@ -274,6 +275,10 @@ contract ThetaDropMarketplace is ExchangeCore {
         return lmp.omega;
     }
 
+    function getLiquidityMiningParamPriceThreshold() external view returns (uint) {
+        return lmp.priceThreshold;
+    }
+
     function getLiquidityMiningParamMaxRewardPerTrade() external view returns (uint) {
         return lmp.maxRewardPerTrade;
     }
@@ -294,15 +299,20 @@ contract ThetaDropMarketplace is ExchangeCore {
         lmp.omega = omega;
     }
 
+    function updateLiquidityMiningParamPriceThreshold(uint priceThreshold) onlyAdminOrGovernor external {
+        lmp.priceThreshold = priceThreshold;
+    }
+
     function updateLiquidityMiningParamMaxRewardPerTrade(uint maxRewardPerTrade) onlyAdminOrGovernor external {
         lmp.maxRewardPerTrade = maxRewardPerTrade;
     }
 
-    function updateLiquidityMiningParams(uint epsilon, uint alpha, uint gamma, uint omega, uint maxRewardPerTrade) onlyAdminOrGovernor external {
+    function updateLiquidityMiningParams(uint epsilon, uint alpha, uint gamma, uint omega, uint priceThreshold, uint maxRewardPerTrade) onlyAdminOrGovernor external {
         lmp.epsilon = epsilon;
         lmp.alpha = alpha;
         lmp.gamma = gamma;
         lmp.omega = omega;
+        lmp.priceThreshold = priceThreshold;
         lmp.maxRewardPerTrade = maxRewardPerTrade;
     }
 
@@ -396,8 +406,8 @@ contract ThetaDropMarketplace is ExchangeCore {
         }
 
         uint priceInTFuelWei = msg.value;
-        if (priceInTFuelWei == 0) {
-            return 0; // only purchasing with TFuel can earn TDrop through NFT Liquidity mining
+        if (priceInTFuelWei <= lmp.priceThreshold) {
+            return 0; // only purchasing with TFuel (and above the specified threshold) can earn TDrop through NFT Liquidity mining
         }
 
         if (miningOnlyForWhitelistedNFTs) {
@@ -432,7 +442,7 @@ contract ThetaDropMarketplace is ExchangeCore {
 
             dataWarehouse.updateHighestSellingPriceInTFuelWei(tm.nftTokenAddress, tm.nftTokenID, priceInTFuelWei);
 
-            emit CalculateTDropMined(lmp.alpha, priceInTFuelWei, highestSellingPriceInTFuelWei, lmp.gamma, lmp.omega, blockHeight, lastTradeBlockHeight, lmp.epsilon, lmp.maxRewardPerTrade);
+            emit CalculateTDropMined(lmp.alpha, priceInTFuelWei, highestSellingPriceInTFuelWei, lmp.gamma, lmp.omega, blockHeight, lastTradeBlockHeight, lmp.epsilon, lmp.priceThreshold, lmp.maxRewardPerTrade);
         } else {
             tdropMined = lmp.epsilon;
         }
