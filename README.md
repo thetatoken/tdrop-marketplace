@@ -1,8 +1,8 @@
-# TDROP Marketplace Trading Engine
+# ThetaDrop NFT Marketplace Trading Engine
 
 ## Introduction
 
-This repository contains the smart contract implementation of the TDROP Marketplace NFT trading engine based on [Wyvern v3.1](https://github.com/wyvernprotocol/wyvern-v3), a marketplace engine also used by [OpenSea](https://opensea.io/). This [test case](https://github.com/thetatoken/tdrop-marketplace/blob/0aca94c6fe353c59c86088617edcd4005592eb00/test/10-theta-drop-marketplace-nft-purchases.js#L60) illustrates the flow of purchasing an NFT with TNT-20 tokens (e.g. stable coins). For purchasing an NFT with TFuel, please checkout this [test case](https://github.com/thetatoken/tdrop-marketplace/blob/0aca94c6fe353c59c86088617edcd4005592eb00/test/10-theta-drop-marketplace-nft-purchases.js#L142).
+This repository contains the smart contract implementation of the ThetaDrop Marketplace NFT trading engine based on [Wyvern v3.1](https://github.com/wyvernprotocol/wyvern-v3), a marketplace engine also used by [OpenSea](https://opensea.io/). This [test case](https://github.com/thetatoken/tdrop-marketplace/blob/0aca94c6fe353c59c86088617edcd4005592eb00/test/10-theta-drop-marketplace-nft-purchases.js#L60) illustrates the flow of purchasing an NFT with TNT-20 tokens (e.g. stable coins). For purchasing an NFT with TFuel, please checkout this [test case](https://github.com/thetatoken/tdrop-marketplace/blob/0aca94c6fe353c59c86088617edcd4005592eb00/test/10-theta-drop-marketplace-nft-purchases.js#L142).
 
 ### NFT Liquidity Mining
 
