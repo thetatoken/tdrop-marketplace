@@ -4,6 +4,8 @@
 
 This repository contains the smart contract implementation of the TDROP Marketplace NFT trading engine based on [Wyvern v3.1](https://github.com/wyvernprotocol/wyvern-v3), a marketplace engine also used by [OpenSea](https://opensea.io/). This [test case](https://github.com/thetatoken/tdrop-marketplace/blob/0aca94c6fe353c59c86088617edcd4005592eb00/test/10-theta-drop-marketplace-nft-purchases.js#L60) illustrates the flow of purchasing an NFT with TNT-20 tokens (e.g. stable coins). For purchasing an NFT with TFuel, please checkout this [test case](https://github.com/thetatoken/tdrop-marketplace/blob/0aca94c6fe353c59c86088617edcd4005592eb00/test/10-theta-drop-marketplace-nft-purchases.js#L142).
 
+### NFT Liquidity Mining
+
 One of the important features introduced by this trading engine is NFT Liquidity Mining, which is an incentivization mechanism to encourage NFT trading among users. New TDROP tokens will be mined each time a user makes a purchase using TFUEL on ThetaDrop NFT Marketplace or through a 3rd-party NFT DApp built on the NFT marketplace smart contract. It can be thought of as "mining" TDROP by providing liquidity to the Theta NFT Marketplace. It incentivizes early adopters of ThetaDrop to provide liquidity which enhances price discovery, improves trading volumes, and drives more user growth and adoption. ThetaDrop users who hold a balance of TDROP will earn VIP benefits including early or exclusive access to NFTs, limited edition packs, unique offline perks and more.
 
 The NFT liquidity mining mechanism has been carefully designed. The main goals are to improve the marketplace liquidity and disincentivize wash trading. Our approach is
