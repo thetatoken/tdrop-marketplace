@@ -1,4 +1,4 @@
-# TDROP Marketplace based on Wyvern v3.1
+# TDROP Marketplace Trading Engine
 
 ## Introduction
 
