@@ -17,6 +17,9 @@ contract ThetaDropDataWarehouse {
     /// @notice The admin address
     address public admin;
 
+    /// @notice The whitelister address
+    address public whitelister;
+
     /// @notice the marketplace address
     address public marketplace;
     
@@ -43,16 +46,21 @@ contract ThetaDropDataWarehouse {
     /// @notice An event thats emitted when the admin address is changed
     event AdminChanged(address admin, address newAdmin);
 
+    /// @notice An event thats emitted when the whitelister address is changed
+    event WhitelisterChanged(address whitelister, address newWhitelister);
+
     /**
      * @notice Construct a new TDrop token
      * @param superAdmin_ The account with super admin permission
      * @param admin_ The account with admin permission
      */
-    constructor(address superAdmin_, address admin_) public {
+    constructor(address superAdmin_, address admin_, address whitelister_) public {
         superAdmin = superAdmin_;
         emit SuperAdminChanged(address(0), superAdmin);
         admin = admin_;
         emit AdminChanged(address(0), admin);
+        whitelister = whitelister_;
+        emit WhitelisterChanged(address(0), whitelister);
     }
     
     /**
@@ -71,6 +79,15 @@ contract ThetaDropDataWarehouse {
     function setAdmin(address admin_) onlySuperAdmin external {
         emit AdminChanged(admin, admin_);
         admin = admin_;
+    }
+    
+    /**
+     * @notice Change the whitelister address
+     * @param whitelister_ The address of the new whitelister
+     */
+    function setWhitelister(address whitelister_) onlyAdmin external {
+        emit WhitelisterChanged(whitelister, whitelister_);
+        whitelister = whitelister_;
     }
 
     /**
@@ -103,7 +120,7 @@ contract ThetaDropDataWarehouse {
         return whitelistedTNT20PaymentTokenMap[tokenAddr];
     }
 
-    function whitelistPaymentToken(address tokenAddr, bool isWhitelisted) onlyAdmin public {
+    function whitelistPaymentToken(address tokenAddr, bool isWhitelisted) onlyWhitelister public {
         whitelistedTNT20PaymentTokenMap[tokenAddr] = isWhitelisted;
     }
 
@@ -111,7 +128,7 @@ contract ThetaDropDataWarehouse {
         return whitelistedTNT721NFTTokenMap[tokenAddr];
     }
 
-    function whitelistTNT721NFTToken(address tokenAddr, bool isWhitelisted) onlyAdmin public {
+    function whitelistTNT721NFTToken(address tokenAddr, bool isWhitelisted) onlyWhitelister public {
         whitelistedTNT721NFTTokenMap[tokenAddr] = isWhitelisted;
     }
 
@@ -119,7 +136,7 @@ contract ThetaDropDataWarehouse {
         return whitelistedTNT1155NFTTokenMap[tokenAddr];
     }
 
-    function whitelistTNT1155NFTToken(address tokenAddr, bool isWhitelisted) onlyAdmin public {
+    function whitelistTNT1155NFTToken(address tokenAddr, bool isWhitelisted) onlyWhitelister public {
         whitelistedTNT1155NFTTokenMap[tokenAddr] = isWhitelisted;
     }
 
@@ -130,6 +147,11 @@ contract ThetaDropDataWarehouse {
 
     modifier onlyAdmin { 
         require(msg.sender == admin, "only the admin can perform this action");
+        _; 
+    }
+
+    modifier onlyWhitelister { 
+        require(msg.sender == whitelister, "only the whitelister can perform this action");
         _; 
     }
 

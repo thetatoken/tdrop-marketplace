@@ -11,7 +11,7 @@ const MockTDropToken = artifacts.require('MockTDropToken')
 const Web3 = require('web3')
 const provider = new Web3.providers.HttpProvider('http://localhost:18888')
 const web3 = new Web3(provider)
-const {wrap,ZERO_BYTES32, CHAIN_ID} = require('./aux')
+const {wrap, ZERO_ADDRESS, ZERO_BYTES32, CHAIN_ID} = require('./aux')
 const BN = web3.utils.BN
 
 const primaryMarketPlatformFeeSplitBasisPoints = 3000
@@ -36,7 +36,7 @@ contract('ThetaDrop-Marketplace-NFT-Purchases', (accounts) => {
         atomicizer = await WyvernAtomicizer.new()
         marketplace = await ThetaDropMarketplace.new(CHAIN_ID, '0x', superAdmin, admin, platformFeeRecipient)
         tokenSwapAgent = await TokenSwapAgent.new(superAdmin, admin)
-        dataWarehouse = await ThetaDropDataWarehouse.new(superAdmin, admin)
+        dataWarehouse = await ThetaDropDataWarehouse.new(superAdmin, admin, ZERO_ADDRESS)
         statici = await StaticMarket.new()
 
         await marketplace.setTDropToken(tdropToken.address, {from: admin})
@@ -66,13 +66,15 @@ contract('ThetaDrop-Marketplace-NFT-Purchases', (accounts) => {
         let nftSeller        = accounts[6]
         let nftBuyer         = accounts[0]
         let admin            = accounts[8]
+        let whitelister      = accounts[5]
         let platformFeeRecipient = accounts[7]
 
         let {registry, marketplace, tokenSwapAgent, dataWarehouse, atomicizer, statici, tdropToken} = await deployCoreContracts()
         let tokenSwapAgentAddr = tokenSwapAgent.address
         let [erc721] = await deploy([TestERC721])
         let [erc20] = await deploy([TestERC20])
-        await dataWarehouse.whitelistPaymentToken(erc20.address, true, {from: admin})
+        await dataWarehouse.setWhitelister(whitelister, {from: admin})
+        await dataWarehouse.whitelistPaymentToken(erc20.address, true, {from: whitelister})
 
         await erc721.mint(nftSeller, nftTokenID)
         await erc20.mint(nftBuyer, erc20MintAmount)

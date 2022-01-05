@@ -11,7 +11,7 @@ const MockTDropToken = artifacts.require('MockTDropToken')
 const Web3 = require('web3')
 const provider = new Web3.providers.HttpProvider('http://localhost:18888')
 const web3 = new Web3(provider)
-const {wrap,ZERO_BYTES32, CHAIN_ID} = require('./aux')
+const {wrap, ZERO_ADDRESS, ZERO_BYTES32, CHAIN_ID} = require('./aux')
 const BN = web3.utils.BN
 
 const platformFeeSplitBasisPoints = 1000
@@ -41,7 +41,7 @@ contract('ThetaDrop-NFT-Liquidity-Mining', (accounts) => {
         atomicizer = await WyvernAtomicizer.new()
         marketplace = await ThetaDropMarketplace.new(CHAIN_ID, '0x', superAdmin, admin, platformFeeRecipient)
         tokenSwapAgent = await TokenSwapAgent.new(superAdmin, admin)
-        dataWarehouse = await ThetaDropDataWarehouse.new(superAdmin, admin)
+        dataWarehouse = await ThetaDropDataWarehouse.new(superAdmin, admin, ZERO_ADDRESS)
         statici = await StaticMarket.new()
 
         await marketplace.setTDropToken(tdropToken.address, {from: admin})
@@ -501,5 +501,90 @@ contract('ThetaDrop-NFT-Liquidity-Mining', (accounts) => {
 
         console.log("-------------------------------------------------------------")
         console.log("")
+    })
+
+    it('NFT Liquidity Mining Whitelisted TNT721 only', async () => {
+        let nftTokenID           = 9912879027088
+        let currentTradePrice    = (new BN(122)).mul(dec18)
+        let highestSellingPriceInThePast = new BN(0)
+        let nftSeller            = accounts[5]
+        let nftBuyer             = accounts[6]
+        let platformFeeRecipient = accounts[7]
+        let whitelister          = accounts[4]
+        let admin                = accounts[8]
+
+        let {registry, marketplace, tokenSwapAgent, dataWarehouse, atomicizer, statici, tdropToken} = await deployCoreContracts()
+        await dataWarehouse.setWhitelister(whitelister, {from: admin})
+        await marketplace.inst.enableLiqudityMiningOnlyForWhitelistedNFTs(true, {from: admin})
+
+        let tokenSwapAgentAddr = tokenSwapAgent.address
+
+        // ------ The NFT trade for the whitelisted TNT721 ------ //
+        {
+            let [erc721Whitelisted] = await deploy([TestERC721])
+            await erc721Whitelisted.mint(nftSeller, nftTokenID)
+
+            // The seller puts the NFT on sale
+            await erc721Whitelisted.setApprovalForAll(tokenSwapAgentAddr, true, {from: nftSeller})
+            await dataWarehouse.whitelistTNT721NFTToken(erc721Whitelisted.address, true, {from: whitelister})
+
+            let lastTradeBlockHeight = new BN(0)
+            await mineBlocks(10) // advance a few blocks
+            let currentTradeBlockHeight = await getBlockHeight(true)
+
+            let buyerEthBalanceB4Trade = await web3.eth.getBalance(nftBuyer)
+            let sellerEthBalanceB4Trade = await web3.eth.getBalance(nftSeller)
+            let platformFeeRecipientEthBalanceB4Trade = await web3.eth.getBalance(platformFeeRecipient)
+            let sellerTDropBalanceB4Trade = await tdropToken.balanceOf(nftSeller)
+            let buyerTDropBalanceB4Trade = await tdropToken.balanceOf(nftBuyer)
+
+            let nftSellerSalt = getSalt()
+            let nftBuyerSalt  = getSalt()
+            let {one, sigOne, firstCall, two, sigTwo, secondCall} = await prepareForNFTTrade(marketplace, erc721Whitelisted, nftSeller, nftSellerSalt, nftBuyer, nftBuyerSalt, nftTokenID, currentTradePrice)        
+            await marketplace.tradeNFT(one, sigOne, firstCall, two, sigTwo, secondCall, ZERO_BYTES32, {from: nftBuyer, value: currentTradePrice})
+
+            await verifyTradeOutcome(erc721Whitelisted, nftSeller, nftBuyer, nftTokenID, currentTradePrice, sellerEthBalanceB4Trade, buyerEthBalanceB4Trade, platformFeeRecipientEthBalanceB4Trade, true)
+            let maxDiff = new BN('100000000000000000') // 10^17 TDropWei = 0.1 TDrop
+            await verifyLiquidityMiningResults(nftSeller, nftBuyer, sellerTDropBalanceB4Trade, buyerTDropBalanceB4Trade, currentTradePrice, highestSellingPriceInThePast, currentTradeBlockHeight, lastTradeBlockHeight, maxDiff, true)
+        }
+
+        // ------ The NFT trade for the TNT721 not whitelisted ------ //
+        {
+            let [erc721NotWhitelisted] = await deploy([TestERC721])
+            await erc721NotWhitelisted.mint(nftSeller, nftTokenID)
+
+            // The seller puts the NFT on sale
+            await erc721NotWhitelisted.setApprovalForAll(tokenSwapAgentAddr, true, {from: nftSeller})
+    
+            lastTradeBlockHeight = new BN(0)
+            await mineBlocks(100) // advance a few blocks
+            currentTradeBlockHeight = await getBlockHeight(true)
+
+            let buyerEthBalanceB4Trade = await web3.eth.getBalance(nftBuyer)
+            let sellerEthBalanceB4Trade = await web3.eth.getBalance(nftSeller)
+            let platformFeeRecipientEthBalanceB4Trade = await web3.eth.getBalance(platformFeeRecipient)
+            let sellerTDropBalanceB4Trade = await tdropToken.balanceOf(nftSeller)
+            let buyerTDropBalanceB4Trade = await tdropToken.balanceOf(nftBuyer)
+
+            let nftSellerSalt = getSalt()
+            let nftBuyerSalt  = getSalt()
+            let {one, sigOne, firstCall, two, sigTwo, secondCall} = await prepareForNFTTrade(marketplace, erc721NotWhitelisted, nftSeller, nftSellerSalt, nftBuyer, nftBuyerSalt, nftTokenID, currentTradePrice)        
+            await marketplace.tradeNFT(one, sigOne, firstCall, two, sigTwo, secondCall, ZERO_BYTES32, {from: nftBuyer, value: currentTradePrice})
+            await verifyTradeOutcome(erc721NotWhitelisted, nftSeller, nftBuyer, nftTokenID, currentTradePrice, sellerEthBalanceB4Trade, buyerEthBalanceB4Trade, platformFeeRecipientEthBalanceB4Trade, true)
+        
+            let sellerTDropBalance = await tdropToken.balanceOf(nftSeller)
+            let buyerTDropBalance = await tdropToken.balanceOf(nftBuyer)
+    
+            assert.isTrue(sellerTDropBalance.sub(sellerTDropBalanceB4Trade).cmp(new BN('0')) == 0) // seller's TDrop balance should not change
+            assert.isTrue(buyerTDropBalance.sub(buyerTDropBalanceB4Trade).cmp(new BN('0')) == 0) // no TDrop mined for the NFT that is not whitelisted
+        
+            print = true
+            if (print) {
+                console.log("sellerTDropBalanceB4Trade:", sellerTDropBalanceB4Trade.toString(), "TDropWei")
+                console.log("buyerTDropBalanceB4Trade :", buyerTDropBalanceB4Trade.toString(), "TDropWei")
+                console.log("sellerTDropBalance       :", sellerTDropBalance.toString(), "TDropWei")
+                console.log("buyerTDropBalance        :", buyerTDropBalance.toString(), "TDropWei")
+            }
+        }
     })
 })
