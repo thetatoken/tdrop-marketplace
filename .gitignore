@@ -7,3 +7,5 @@ temp/
 .DS_Store
 .nova/
 .env
+
+./config.json
