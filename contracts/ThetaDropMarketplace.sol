@@ -179,6 +179,8 @@ contract ThetaDropMarketplace is ExchangeCore {
 
     event MinedTDrop(address indexed recipient, uint tdropMined);
 
+    event TFuelSplit(address seller, uint sellerEarning, address indexed platformFeeRecipient, uint platformFee);
+
     constructor (uint chainId, bytes memory customPersonalSignPrefix,
                  address superAdmin_, address admin_, address payable platformFeeRecipient_) {
         DOMAIN_SEPARATOR = hash(EIP712Domain({
@@ -488,6 +490,9 @@ contract ThetaDropMarketplace is ExchangeCore {
             if (platformFeeInTFuel > 0) {
                 platformFeeRecipient.transfer(platformFeeInTFuel);
             }
+
+            address seller = firstOrder.maker;
+            emit TFuelSplit(seller, sellerValue, platformFeeRecipient, platformFeeInTFuel);
 
             return sellerValue;
 
