@@ -179,7 +179,7 @@ contract ThetaDropMarketplace is ExchangeCore {
 
     event MinedTDrop(address indexed recipient, uint tdropMined);
 
-    event TFuelSplit(address seller, uint sellerEarning, address indexed platformFeeRecipient, uint platformFee);
+    event TFuelSplit(address indexed seller, uint sellerEarning, address indexed platformFeeRecipient, uint platformFee);
 
     constructor (uint chainId, bytes memory customPersonalSignPrefix,
                  address superAdmin_, address admin_, address payable platformFeeRecipient_) {
